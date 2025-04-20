@@ -1,5 +1,8 @@
 #include <GLFW/glfw3.h> // Include the GLFW header
 #include <iostream>     // For console output (errors)
+#include <fstream>      // For file reading
+#include <sstream>      // For string streams
+#include <string>       // For using strings
 #include <cmath>        // For sin/cos in animation
 
 // We'll need to include the core OpenGL header specific to macOS
@@ -9,49 +12,39 @@
 #endif
 
 // Include GLM
-// GLM is a header-only library, meaning you just need the header files.
-// If you downloaded GLM, make sure your compiler can find its headers.
-// A common setup is to put the 'glm' folder in your project directory or a 'libs' folder
-// and tell the compiler about it with an -I flag in the Makefile (like we did for GLFW).
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 
-// Vertex Shader source code
-// Using standard C++ string concatenation instead of raw string literals
-const char* vertexShaderSource =
-    "#version 330 core\n" // Use OpenGL version 3.3 with core profile
-    "\n"
-    "layout (location = 0) in vec3 aPos;\n" // Input vertex position from attribute 0
-    "layout (location = 1) in vec3 aColor;\n" // Input vertex color from attribute 1
-    "\n"
-    "out vec3 vColor;\n" // Output color to the fragment shader
-    "\n"
-    "uniform mat4 model;\n" // Transformation matrix for object's position/rotation/scale
-    "uniform mat4 view;\n" // Transformation matrix for camera position/orientation
-    "uniform mat4 projection;\n" // Transformation matrix for perspective/orthographic view
-    "\n"
-    "void main()\n"
-    "{\n"
-    "    gl_Position = projection * view * model * vec4(aPos, 1.0);\n" // Calculate final vertex position
-    "    vColor = aColor;\n" // Pass color through
-    "}\0"; // Null terminator for the string
+// Helper function to read shader source code from a file
+std::string readShaderFile(const std::string& filePath) {
+    std::ifstream shaderFile;
+    std::stringstream shaderStream;
+    std::string shaderCode;
 
+    // Ensure ifstream objects can throw exceptions
+    shaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
 
-// Fragment Shader source code
-// Using standard C++ string concatenation
-const char* fragmentShaderSource =
-    "#version 330 core\n" // Use OpenGL version 3.3 with core profile
-    "\n"
-    "in vec3 vColor;\n" // Input color from the vertex shader (interpolated)
-    "\n"
-    "out vec4 FragColor;\n" // Output final color for the pixel
-    "\n"
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(vColor, 1.0);\n" // Set the pixel color
-    "}\0"; // Null terminator for the string
+    try {
+        // Open file
+        shaderFile.open(filePath);
+        // Read file's buffer contents into streams
+        shaderStream << shaderFile.rdbuf();
+        // Close file handlers
+        shaderFile.close();
+        // Convert stream into string
+        shaderCode = shaderStream.str();
+    } catch (std::ifstream::failure& e) {
+        std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filePath << std::endl;
+        // You might want to return an empty string or handle this error differently
+        // depending on how you want your program to behave on failure.
+        // Returning an empty string will likely cause shader compilation to fail,
+        // which is a reasonable outcome.
+        return "";
+    }
+    return shaderCode;
+}
 
 
 // Helper function to compile shaders
@@ -77,10 +70,25 @@ unsigned int compileShader(unsigned int type, const char* source) {
 }
 
 // Helper function to link shaders into a program
-unsigned int createShaderProgram(const char* vertexSource, const char* fragmentSource) {
+// Now takes file paths instead of source strings
+unsigned int createShaderProgram(const std::string& vertexPath, const std::string& fragmentPath) {
+    // 1. Retrieve the vertex/fragment source code from filePath
+    std::string vertexCode = readShaderFile(vertexPath);
+    std::string fragmentCode = readShaderFile(fragmentPath);
+
+    if (vertexCode.empty() || fragmentCode.empty()) {
+        // If reading failed, return 0
+        return 0;
+    }
+
+    const char* vShaderCode = vertexCode.c_str(); // Get C-style string from std::string
+    const char* fShaderCode = fragmentCode.c_str(); // Get C-style string from std::string
+
+
+    // 2. Compile shaders
     unsigned int program = glCreateProgram(); // Create a shader program object (ID)
-    unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexSource); // Compile vertex shader
-    unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentSource); // Compile fragment shader
+    unsigned int vs = compileShader(GL_VERTEX_SHADER, vShaderCode); // Compile vertex shader
+    unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fShaderCode); // Compile fragment shader
 
     if (vs == 0 || fs == 0) {
         // If compilation failed for either, clean up and return 0
@@ -88,6 +96,7 @@ unsigned int createShaderProgram(const char* vertexSource, const char* fragmentS
         return 0;
     }
 
+    // 3. Link program
     glAttachShader(program, vs); // Attach vertex shader to the program
     glAttachShader(program, fs); // Attach fragment shader to the program
     glLinkProgram(program); // Link the program
@@ -253,7 +262,8 @@ int main() {
 
 
     // --- Compile and Link Shaders ---
-    unsigned int shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
+    // Now we pass the file paths to createShaderProgram
+    unsigned int shaderProgram = createShaderProgram("shader.vs", "shader.fs");
     if (shaderProgram == 0) {
         // Clean up buffers/arrays if shader program failed
         glDeleteVertexArrays(1, &VAO);
