@@ -21,7 +21,7 @@ FRAMEWORKS = -framework OpenGL
 TARGET = opengl_cube
 
 # Source files
-SRCS = main.cpp
+SRCS = src/main.cpp
 
 # Object files (generated from source files)
 OBJS = $(SRCS:.cpp=.o)
