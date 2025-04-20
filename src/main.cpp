@@ -10,18 +10,12 @@
 #include <OpenGL/gl3.h>
 #endif
 
-// Include GLM
-
 #include "Shader.h"
 #include "Mesh.h"
 #include "World.h"
 #include "Camera.h"
 #include "Renderer.h"
 
-// --- Class Definitions (Interfaces and minimal implementations) ---
-// In a real project, these would be in separate .h and .cpp files.
-
-// --- Main Cube Data (Moved outside main function) ---
 float cubeVertices[] = {
     // Positions           // Colors
     -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // Back bottom left (Red)
