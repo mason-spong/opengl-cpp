@@ -1,6 +1,17 @@
 #include "Shader.h"
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <ostream>
+#include <cstddef>
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/ext/vector_float3.hpp"
 
-// --- Helper Functions Implementation ---
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#endif
 
 std::string readShaderFile(const std::string &filePath)
 {
@@ -55,8 +66,6 @@ unsigned int compileShader(unsigned int type, const char *source)
     }
     return id; // Return the shader ID
 }
-
-// --- Shader Class Implementation ---
 
 Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath)
 {

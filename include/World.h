@@ -1,9 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <vector> // For storing block positions
-
-// Include GLM
+#include <vector>
 #include <glm/glm.hpp>
 
 // Simple representation of the game world holding block positions

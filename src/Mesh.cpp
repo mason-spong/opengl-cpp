@@ -1,4 +1,11 @@
 #include "Mesh.h"
+#include <cstddef>
+#include <utility>
+#include <vector>
+
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#endif
 
 Mesh::Mesh(const float *vertices, size_t vertexSize, const unsigned int *indices, size_t indexSize, size_t vertexStride, const std::vector<std::pair<unsigned int, size_t>> &attributeLayout)
 {

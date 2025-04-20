@@ -1,21 +1,16 @@
 #include <GLFW/glfw3.h> // Include the GLFW header
-#include <iostream>     // For console output (errors)
-#include <fstream>      // For file reading
-#include <sstream>      // For string streams
-#include <string>       // For using strings
-#include <vector>       // For storing block positions
-#include <cmath>        // For sin/cos in animation
+#include <OpenGL/gl.h>
+#include <cstddef>
+#include <iostream> // For console output (errors)
+#include <string>   // For using strings
+#include <utility>
+#include <vector> // For storing block positions
 
-// We'll need to include the core OpenGL header specific to macOS
-// after making the context current.
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #endif
 
 // Include GLM
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
 #include "Mesh.h"

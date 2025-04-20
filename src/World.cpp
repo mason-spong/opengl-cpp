@@ -1,4 +1,6 @@
 #include "World.h"
+#include "glm/ext/vector_float3.hpp"
+#include <vector>
 
 void World::addBlock(const glm::vec3 &pos)
 {

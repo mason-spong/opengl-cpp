@@ -45,5 +45,20 @@
         "vector": "cpp",
         "sstream": "cpp",
         "fstream": "cpp"
-    }
+    },
+    // This is the correct setting to turn Clang-Tidy on or off
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    // Specify checks to explicitly enable. "*" means enable all by default.
+    // You can list specific checks here like "misc-unused-includes"
+    "C_Cpp.codeAnalysis.clangTidy.checks.enabled": [
+        "misc-include-cleaner"
+    ],
+    // Specify checks to explicitly disable. Use this to turn off noisy checks or categories.
+    "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
+        "google-*",
+        "llvm-*",
+        "modernize-use-trailing-return-type",
+        "clang-diagnostic-deprecated-declarations"
+    ],
+    "cmake.ignoreCMakeListsMissing": true,
 }

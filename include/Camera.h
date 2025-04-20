@@ -2,9 +2,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-// Include GLM
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 // Represents the camera's view and projection
 class Camera

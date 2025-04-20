@@ -1,4 +1,14 @@
 #include "Renderer.h"
+#include "Camera.h"
+#include "Mesh.h"
+#include "Shader.h"
+#include "World.h"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#endif
 
 Renderer::Renderer(const Mesh &mesh, const Shader &shader) : meshToDraw(mesh), shaderToUse(shader)
 {
