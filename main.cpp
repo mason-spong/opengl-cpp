@@ -342,11 +342,6 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
-    // *** IMPORTANT for macOS ***
-#ifdef __APPLE__
-    // Include OpenGL headers after context is current
-#endif
-
     // --- 2. Create Rendering Resources (Mesh, Shader) ---
 
     // Define the layout of the vertex data for the Mesh constructor
