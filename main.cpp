@@ -3,6 +3,7 @@
 #include <fstream>      // For file reading
 #include <sstream>      // For string streams
 #include <string>       // For using strings
+#include <vector>       // For storing block positions
 #include <cmath>        // For sin/cos in animation
 
 // We'll need to include the core OpenGL header specific to macOS
@@ -16,6 +17,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+// --- Helper Functions (Could be private methods of Shader/Renderer classes) ---
 
 // Helper function to read shader source code from a file
 std::string readShaderFile(const std::string& filePath) {
@@ -37,11 +40,7 @@ std::string readShaderFile(const std::string& filePath) {
         shaderCode = shaderStream.str();
     } catch (std::ifstream::failure& e) {
         std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filePath << std::endl;
-        // You might want to return an empty string or handle this error differently
-        // depending on how you want your program to behave on failure.
-        // Returning an empty string will likely cause shader compilation to fail,
-        // which is a reasonable outcome.
-        return "";
+        return ""; // Return empty string on failure
     }
     return shaderCode;
 }
@@ -69,292 +68,352 @@ unsigned int compileShader(unsigned int type, const char* source) {
     return id; // Return the shader ID
 }
 
-// Helper function to link shaders into a program
-// Now takes file paths instead of source strings
-unsigned int createShaderProgram(const std::string& vertexPath, const std::string& fragmentPath) {
-    // 1. Retrieve the vertex/fragment source code from filePath
-    std::string vertexCode = readShaderFile(vertexPath);
-    std::string fragmentCode = readShaderFile(fragmentPath);
 
-    if (vertexCode.empty() || fragmentCode.empty()) {
-        // If reading failed, return 0
-        return 0;
+// --- Class Definitions (Interfaces and minimal implementations) ---
+// In a real project, these would be in separate .h and .cpp files.
+
+// Represents a compiled and linked shader program
+class Shader {
+public:
+    unsigned int ID; // The OpenGL shader program ID
+
+    // Constructor reads, compiles, and links shaders
+    Shader(const std::string& vertexPath, const std::string& fragmentPath) {
+        // Read shader files
+        std::string vertexCode = readShaderFile(vertexPath);
+        std::string fragmentCode = readShaderFile(fragmentPath);
+
+        if (vertexCode.empty() || fragmentCode.empty()) {
+            ID = 0; // Indicate failure
+            return;
+        }
+
+        const char* vShaderCode = vertexCode.c_str();
+        const char* fShaderCode = fragmentCode.c_str();
+
+        // Compile shaders
+        unsigned int vertex = compileShader(GL_VERTEX_SHADER, vShaderCode);
+        unsigned int fragment = compileShader(GL_FRAGMENT_SHADER, fShaderCode);
+
+        if (vertex == 0 || fragment == 0) {
+            ID = 0; // Indicate failure
+            return;
+        }
+
+        // Link program
+        ID = glCreateProgram();
+        glAttachShader(ID, vertex);
+        glAttachShader(ID, fragment);
+        glLinkProgram(ID);
+
+        // Check for linking errors
+        int success;
+        char infoLog[512];
+        glGetProgramiv(ID, GL_LINK_STATUS, &success);
+        if (!success) {
+            std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+            glDeleteProgram(ID);
+            ID = 0; // Indicate failure
+        }
+
+        // Delete the shaders as they're linked into our program now
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
     }
 
-    const char* vShaderCode = vertexCode.c_str(); // Get C-style string from std::string
-    const char* fShaderCode = fragmentCode.c_str(); // Get C-style string from std::string
-
-
-    // 2. Compile shaders
-    unsigned int program = glCreateProgram(); // Create a shader program object (ID)
-    unsigned int vs = compileShader(GL_VERTEX_SHADER, vShaderCode); // Compile vertex shader
-    unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fShaderCode); // Compile fragment shader
-
-    if (vs == 0 || fs == 0) {
-        // If compilation failed for either, clean up and return 0
-        glDeleteProgram(program);
-        return 0;
+    // Destructor to clean up the shader program
+    ~Shader() {
+        if (ID != 0) {
+            glDeleteProgram(ID);
+        }
     }
 
-    // 3. Link program
-    glAttachShader(program, vs); // Attach vertex shader to the program
-    glAttachShader(program, fs); // Attach fragment shader to the program
-    glLinkProgram(program); // Link the program
-
-    // Check for linking errors
-    int success;
-    char infoLog[512];
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-        glDeleteProgram(program); // Delete the program if linking failed
-        glDeleteShader(vs); // Delete shaders as they are linked into the program now
-        glDeleteShader(fs);
-        return 0;
+    // Use the shader program
+    void use() const {
+        glUseProgram(ID);
     }
 
-    // Delete the shaders as they're now linked into our program and we don't need them anymore
-    glDeleteShader(vs);
-    glDeleteShader(fs);
+    // Utility uniform functions
+    void setMatrix4(const std::string& name, const glm::mat4& matrix) const {
+        // Get the location of the uniform variable in the shader
+        // We get the location every time here for simplicity, but for performance
+        // you would typically get all uniform locations once after linking.
+        int uniformLocation = glGetUniformLocation(ID, name.c_str());
+        glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+    // Add other uniform setters as needed (setVec3, setFloat, setInt, etc.)
+};
 
-    return program; // Return the program ID
-}
+// Represents geometric data (vertices, indices) and its OpenGL buffers (VAO, VBO, EBO)
+class Mesh {
+public:
+    unsigned int VAO, VBO, EBO;
+    unsigned int indexCount; // Number of indices to draw
+
+    // Constructor takes vertex and index data and sets up OpenGL buffers
+    Mesh(const float* vertices, size_t vertexSize, const unsigned int* indices, size_t indexSize, size_t vertexStride, const std::vector<std::pair<unsigned int, size_t>>& attributeLayout) {
+        indexCount = indexSize / sizeof(unsigned int);
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertexSize, vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indices, GL_STATIC_DRAW);
+
+        // Configure vertex attributes based on the provided layout
+        for (const auto& attr : attributeLayout) {
+            unsigned int location = attr.first;
+            size_t offset = attr.second;
+             // Assuming size=3, type=GL_FLOAT, normalized=GL_FALSE for this cube example
+            glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, vertexStride, (void*)offset);
+            glEnableVertexAttribArray(location);
+        }
+
+        glBindVertexArray(0); // Unbind VAO
+        // Note: VBO and EBO are unbound when VAO is unbound
+    }
+
+    // Destructor to clean up OpenGL buffers
+    ~Mesh() {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
+    // Bind the mesh's VAO for drawing
+    void bind() const {
+        glBindVertexArray(VAO);
+    }
+
+    // Unbind the mesh's VAO
+    void unbind() const {
+        glBindVertexArray(0);
+    }
+};
+
+// Represents the camera's view and projection
+class Camera {
+public:
+    glm::vec3 position;
+    glm::vec3 target;
+    glm::vec3 up;
+    float fov;
+    float aspectRatio;
+    float nearPlane;
+    float farPlane;
+
+    Camera(glm::vec3 pos, glm::vec3 lookAt, glm::vec3 upVec, float fovDeg, float aspect, float near, float far)
+        : position(pos), target(lookAt), up(upVec), fov(fovDeg), aspectRatio(aspect), nearPlane(near), farPlane(far) {}
+
+    glm::mat4 getViewMatrix() const {
+        return glm::lookAt(position, target, up);
+    }
+
+    glm::mat4 getProjectionMatrix() const {
+        return glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+    }
+};
+
+// Simple representation of the game world holding block positions
+class World {
+public:
+    std::vector<glm::vec3> blockPositions;
+
+    void addBlock(const glm::vec3& pos) {
+        blockPositions.push_back(pos);
+    }
+
+    const std::vector<glm::vec3>& getBlocksToRender() const {
+        // In a real game, this would return visible blocks (e.g., based on camera frustum, chunks)
+        return blockPositions;
+    }
+};
+
+// Handles the rendering process
+class Renderer {
+private:
+    const Mesh& meshToDraw; // Reference to the shared mesh (e.g., cube mesh)
+    const Shader& shaderToUse; // Reference to the shared shader
+
+public:
+    Renderer(const Mesh& mesh, const Shader& shader)
+        : meshToDraw(mesh), shaderToUse(shader) {
+        // Renderer constructor can set up global GL state if needed
+        glEnable(GL_DEPTH_TEST);
+    }
+
+    void render(const World& world, const Camera& camera) {
+        // Clear buffers
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Use the shader program
+        shaderToUse.use();
+
+        // Set view and projection matrices (these are usually per-frame, not per-object)
+        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 projection = camera.getProjectionMatrix();
+        shaderToUse.setMatrix4("view", view);
+        shaderToUse.setMatrix4("projection", projection);
+
+        // Bind the mesh (can be done once if all objects use the same mesh)
+        meshToDraw.bind();
+
+        // Iterate through objects in the world and draw them
+        const auto& blocks = world.getBlocksToRender();
+        for (const auto& blockPos : blocks) {
+            // Calculate the model matrix for this specific block
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, blockPos); // Move the block to its world position
+            // Add rotation or scale here if blocks could be rotated/scaled individually
+
+            // Pass the model matrix to the shader
+            shaderToUse.setMatrix4("model", model);
+
+            // Draw the mesh using the bound VAO and active shader
+            glDrawElements(GL_TRIANGLES, meshToDraw.indexCount, GL_UNSIGNED_INT, 0);
+        }
+
+        meshToDraw.unbind(); // Unbind mesh after drawing
+        glUseProgram(0); // Unbind shader after drawing
+    }
+};
+
+
+// --- Main Cube Data (Moved outside main function) ---
+float cubeVertices[] = {
+    // Positions           // Colors
+    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back bottom left (Red)
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back bottom right (Red)
+     0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back top right (Red)
+    -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back top left (Red)
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front bottom left (Green)
+     0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front bottom right (Green)
+     0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front top right (Green)
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front top left (Green)
+};
+
+unsigned int cubeIndices[] = {
+    // Back face
+    0, 1, 2,
+    2, 3, 0,
+    // Front face
+    4, 5, 6,
+    6, 7, 4,
+    // Left face
+    4, 0, 3,
+    3, 7, 4,
+    // Right face
+    1, 5, 6,
+    6, 2, 1,
+    // Bottom face
+    0, 4, 5,
+    5, 1, 0,
+    // Top face
+    3, 2, 6,
+    6, 7, 3
+};
 
 
 int main() {
-    // Initialize GLFW
+    // --- 1. Initialize Systems (GLFW, Window, OpenGL Context) ---
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
 
-    // --- Configure the Window and OpenGL Context ---
-    // Set the required OpenGL version (e.g., 3.3)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // Use the core profile (modern OpenGL)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // Enable forward compatibility (required on macOS)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-
-    // --- Create a Windowed Mode Window and its OpenGL Context ---
-    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Cube", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Cube World", NULL, NULL);
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate(); // Clean up GLFW before exiting
+        glfwTerminate();
         return -1;
     }
-
-    // --- Make the Window's Context the Current One ---
     glfwMakeContextCurrent(window);
 
     // *** IMPORTANT for macOS ***
-    // We need to include the OpenGL header *after* the context is current.
-    // This allows the OpenGL functions to be loaded correctly.
-    // Note: The warning about gl.h and gl3.h is common on macOS because
-    // glfw3.h might pull in gl.h and we explicitly include gl3.h.
-    // For modern OpenGL (3.3+ core profile), gl3.h is preferred.
-    // This warning is usually harmless in this setup but good to be aware of.
 #ifdef __APPLE__
-    // #include <OpenGL/gl3.h> // Already included at the top now for clarity on placement
+    // Include OpenGL headers after context is current
 #endif
 
-    // Enable depth testing - essential for 3D
-    // Without this, closer objects won't correctly obscure farther objects.
-    glEnable(GL_DEPTH_TEST);
+    // --- 2. Create Rendering Resources (Mesh, Shader) ---
 
-
-    // --- Prepare Cube Data ---
-    // Define the vertices of the cube.
-    // Each vertex has a position (x, y, z) and a color (r, g, b).
-    // We define 8 unique vertices for the corners of the cube.
-    // The colors are just for visualization.
-    float vertices[] = {
-        // Positions           // Colors
-        -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back bottom left (Red)
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back bottom right (Red)
-         0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back top right (Red)
-        -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f, // Back top left (Red)
-
-        -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front bottom left (Green)
-         0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front bottom right (Green)
-         0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front top right (Green)
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Front top left (Green)
+    // Define the layout of the vertex data for the Mesh constructor
+    // Location 0: Position (3 floats), offset 0
+    // Location 1: Color (3 floats), offset 3 * sizeof(float)
+    std::vector<std::pair<unsigned int, size_t>> cubeAttributeLayout = {
+        {0, 0}, // Position attribute at location 0, offset 0
+        {1, 3 * sizeof(float)} // Color attribute at location 1, offset 3 floats
     };
+    size_t cubeVertexStride = 6 * sizeof(float); // Total size of one vertex (3 pos + 3 color)
 
-    // Define the indices for the cube.
-    // This tells OpenGL which vertices from the 'vertices' array make up each triangle.
-    // A cube has 6 faces, each face is made of 2 triangles.
-    // Total triangles = 12. Total indices = 12 * 3 = 36.
-    unsigned int indices[] = {
-        // Back face
-        0, 1, 2,
-        2, 3, 0,
-        // Front face
-        4, 5, 6,
-        6, 7, 4,
-        // Left face
-        4, 0, 3,
-        3, 7, 4,
-        // Right face
-        1, 5, 6,
-        6, 2, 1,
-        // Bottom face
-        0, 4, 5,
-        5, 1, 0,
-        // Top face
-        3, 2, 6,
-        6, 7, 3
-    };
-
-
-    // --- Set up OpenGL Objects (VAO, VBO, EBO) ---
-    // These objects store and manage your vertex data on the GPU.
-    unsigned int VAO, VBO, EBO; // IDs for Vertex Array Object, Vertex Buffer Object, Element Buffer Object
-
-    glGenVertexArrays(1, &VAO); // Generate 1 VAO
-    glGenBuffers(1, &VBO);      // Generate 1 VBO
-    glGenBuffers(1, &EBO);      // Generate 1 EBO
-
-    // 1. Bind the VAO first. Any subsequent vertex attribute calls will be stored in this VAO.
-    glBindVertexArray(VAO);
-
-    // 2. Bind the VBO and upload the vertex data to the GPU memory.
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // STATIC_DRAW means data won't change often
-
-    // 3. Bind the EBO and upload the index data to the GPU memory.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); // STATIC_DRAW means data won't change often
-
-
-    // 4. Configure Vertex Attributes
-    // Tell OpenGL how to interpret the data in the VBO for each attribute in the vertex shader.
-    // aPos (layout = 0):
-    // index: 0 (matches 'layout (location = 0)' in shader)
-    // size: 3 (vec3 has 3 components: x, y, z)
-    // type: GL_FLOAT
-    // normalized: GL_FALSE (don't normalize the data)
-    // stride: 6 * sizeof(float) (the distance between the start of one vertex and the start of the next vertex in the array. Each vertex is 3 pos + 3 color = 6 floats)
-    // pointer: (void*)0 (offset from the beginning of the vertex data. Positions start at the very beginning.)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0); // Enable the vertex attribute at location 0
-
-    // aColor (layout = 1):
-    // index: 1 (matches 'layout (location = 1)' in shader)
-    // size: 3 (vec3 has 3 components: r, g, b)
-    // type: GL_FLOAT
-    // normalized: GL_FALSE
-    // stride: 6 * sizeof(float) (same stride as positions)
-    // pointer: (void*)(3 * sizeof(float)) (offset to the color data within each vertex. Color starts after 3 floats of position data.)
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1); // Enable the vertex attribute at location 1
-
-    // 5. Unbind the VAO and VBO (and EBO by extension, since it's associated with the VAO)
-    // Good practice to unbind after setup. Unbinding the VAO ensures you don't accidentally configure other buffers with this VAO active.
-    // Note: The EBO *is* stored in the VAO state, so unbinding the VAO effectively unbinds the EBO from the VAO.
-    // You should unbind the EBO *after* unbinding the VAO if you were planning to use EBOs for other objects later without a VAO switch.
-    // In this case, unbinding the VAO is sufficient for isolating this cube's setup.
-    glBindVertexArray(0); // Unbind VAO
-    // glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind VBO (optional after VAO unbind, but safe)
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind EBO (optional after VAO unbind, but safe)
-
-
-    // --- Compile and Link Shaders ---
-    // Now we pass the file paths to createShaderProgram
-    unsigned int shaderProgram = createShaderProgram("shader.vs", "shader.fs");
-    if (shaderProgram == 0) {
-        // Clean up buffers/arrays if shader program failed
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
+    // Create the cube mesh object
+    Mesh cubeMesh(cubeVertices, sizeof(cubeVertices), cubeIndices, sizeof(cubeIndices), cubeVertexStride, cubeAttributeLayout);
+    if (cubeMesh.VAO == 0) {
+        // Handle mesh creation failure
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
     }
 
-    // Get the uniform locations (IDs) for the transformation matrices in the shader
-    int modelLoc = glGetUniformLocation(shaderProgram, "model");
-    int viewLoc = glGetUniformLocation(shaderProgram, "view");
-    int projLoc = glGetUniformLocation(shaderProgram, "projection");
+    // Create the shader program object
+    Shader blockShader("shader.vs", "shader.fs");
+    if (blockShader.ID == 0) {
+        // Handle shader creation failure
+        // Mesh destructor will be called automatically when cubeMesh goes out of scope
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
 
 
-    // --- Main Rendering Loop ---
+    // --- 3. Create Game State (World, Camera) ---
+    World gameWorld;
+    Camera camera(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+
+    // --- 4. Populate Game State (Add Blocks to World) ---
+    // Add a few blocks at different positions
+    gameWorld.addBlock(glm::vec3(0.0f, 0.0f, 0.0f));
+    gameWorld.addBlock(glm::vec3(1.0f, 0.0f, 0.0f));
+    gameWorld.addBlock(glm::vec3(0.0f, 1.0f, 0.0f));
+    gameWorld.addBlock(glm::vec3(-1.0f, 0.0f, 0.0f));
+    gameWorld.addBlock(glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+    // --- 5. Main Render Loop ---
+    Renderer mainRenderer(cubeMesh, blockShader); // Create the renderer instance
+
     while (!glfwWindowShouldClose(window)) {
-        // --- Input Handling ---
+        // --- Input Handling (Placeholder) ---
         glfwPollEvents();
+        // Add keyboard/mouse input processing here, e.g., to move the camera
 
-        // --- Rendering Commands Go Here ---
-        // Clear the color and depth buffers in each frame
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // Set the clear color
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear both color and depth
+        // --- Game Logic Update (Placeholder) ---
+        // Update world state, block positions, etc.
 
-        // Use the shader program
-        glUseProgram(shaderProgram);
-
-        // --- Create and set Transformations (Model, View, Projection) ---
-
-        // Model Matrix: Transforms the cube from its local space (where its vertices are defined around the origin)
-        // into the world space. We'll rotate it over time.
-        glm::mat4 model = glm::mat4(1.0f); // Start with an identity matrix
-        // Rotate the model around the X and Y axes over time for animation
-        float time = glfwGetTime(); // Get current time
-        model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f)); // Rotate 50 degrees per second around (0.5, 1.0, 0.0) axis
-
-        // View Matrix: Transforms vertices from world space into view space (relative to the camera).
-        // It's like moving the world in front of a static camera at the origin.
-        // We'll place the camera back a bit and look towards the origin.
-        glm::mat4 view = glm::mat4(1.0f); // Start with an identity matrix
-        // glm::lookAt(cameraPosition, cameraTarget, upVector)
-        view = glm::lookAt(glm::vec3(2.0f, 2.0f, 3.0f), // Camera is at (2, 2, 3)
-                           glm::vec3(0.0f, 0.0f, 0.0f), // Looking towards the origin (0, 0, 0)
-                           glm::vec3(0.0f, 1.0f, 0.0f)); // Up direction is positive Y
-
-        // Projection Matrix: Transforms vertices from view space into clip space.
-        // This defines the viewing frustum (the visible 3D area).
-        // We'll use a perspective projection, like a real camera.
-        glm::mat4 projection = glm::mat4(1.0f); // Start with an identity matrix
-        // glm::perspective(fieldOfView, aspectRatio, nearPlane, farPlane)
-        projection = glm::perspective(glm::radians(45.0f), // 45 degree field of view
-                                      800.0f / 600.0f,   // Aspect ratio (window width / window height)
-                                      0.1f,              // Near clipping plane (objects closer than this are cut off)
-                                      100.0f);           // Far clipping plane (objects farther than this are cut off)
-
-
-        // Pass the transformation matrices to the shader program uniforms
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); // Set the 'model' uniform
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));  // Set the 'view' uniform
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection)); // Set the 'projection' uniform
-
-
-        // --- Draw the Cube ---
-        // Bind the VAO that contains the cube's data and attribute configurations
-        glBindVertexArray(VAO);
-        // Draw the elements (triangles) using the indices in the bound EBO
-        glDrawElements(GL_TRIANGLES, // What to draw (triangles)
-                       36,           // How many indices to draw (36 for a cube)
-                       GL_UNSIGNED_INT, // Type of indices (unsigned int)
-                       0);           // Offset in the EBO (start from the beginning)
-
-        // Unbind the VAO (optional, but good practice)
-        glBindVertexArray(0);
-
+        // --- Rendering ---
+        // The renderer handles clearing, using shader, setting matrices, binding mesh, and drawing blocks
+        mainRenderer.render(gameWorld, camera);
 
         // --- Swap Buffers ---
         glfwSwapBuffers(window);
     }
 
-    // --- Clean Up ---
-    // Delete the OpenGL objects (VAO, VBO, EBO, Shader Program)
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
-    glDeleteProgram(shaderProgram);
-
-    // Destroy the window and its context
+    // --- 6. Clean Up Systems ---
+    // Class destructors (Mesh, Shader, Renderer) will automatically clean up OpenGL resources.
     glfwDestroyWindow(window);
-    // Terminate GLFW
     glfwTerminate();
 
     return 0;
