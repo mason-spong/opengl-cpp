@@ -1,0 +1,13 @@
+# Ignore object files
+*.o
+
+# Ignore the executable file
+opengl_cube
+
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore VS Code temporary files (optional, .vscode itself is usually included)
+# .vscode/
+# *.log
+# *.cache
