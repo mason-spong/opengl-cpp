@@ -506,19 +506,26 @@ bool Application::loadResources()
 void Application::setupScene()
 {
     std::cout << "Setting up scene..." << std::endl;
-    // Populate the game world
-    gameWorld_.addBlock(glm::vec3(0.0f, 0.0f, 0.0f));
-    gameWorld_.addBlock(glm::vec3(1.0f, 0.0f, 0.0f));
-    gameWorld_.addBlock(glm::vec3(0.0f, 1.0f, 0.0f));
-    gameWorld_.addBlock(glm::vec3(-1.0f, 0.0f, 0.0f));
-    gameWorld_.addBlock(glm::vec3(0.0f, 0.0f, 1.0f));
-    std::cout << "Scene setup complete. Blocks added." << std::endl;
 
-    // Adjust camera aspect ratio based on actual window size
-    // Note: Need a way for Application to know the window size,
-    // maybe via window_->getWidth(), window_->getHeight() or callbacks.
-    // For now, using the initial values.
-    // camera_.aspectRatio = static_cast<float>(window_->getWidth()) / window_->getHeight();
+    // --- Grid configuration ---
+    const int gridWidth = 10;   // number of cubes along X
+    const int gridDepth = 10;   // number of cubes along Z
+    const float spacing = 1.0f; // distance between cube centers
+
+    // Populate the game world with a flat grid at y = 0
+    for (int x = 0; x < gridWidth; ++x)
+    {
+        for (int z = 0; z < gridDepth; ++z)
+        {
+            float xpos = (x - gridWidth * 0.5f) * spacing;
+            float zpos = (z - gridDepth * 0.5f) * spacing;
+            gameWorld_.addBlock(glm::vec3(xpos, 0.0f, zpos));
+        }
+    }
+
+    std::cout << "Scene setup complete. "
+              << (gridWidth * gridDepth) << " blocks added."
+              << std::endl;
 }
 
 void Application::processInput()
