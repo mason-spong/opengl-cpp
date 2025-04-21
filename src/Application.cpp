@@ -140,6 +140,12 @@ void Application::run()
             timeSinceLastPrint_ = 0.0f; // Reset the timer
         }
 
+        // Update the camera projeciton in case user resizes window, not am defensively setting glViewport again here (is done in callback in Window too)
+        int fbW, fbH;
+        glfwGetFramebufferSize(window_->getGLFWwindow(), &fbW, &fbH);
+        glViewport(0, 0, fbW, fbH);
+        camera_.aspectRatio = float(fbW) / float(fbH);
+
         // 1. Input
         processInput();
 

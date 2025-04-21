@@ -24,8 +24,9 @@ Window::Window(int width, int height, const std::string &title, bool isVSyncEnab
         glfwTerminate(); // Clean up GLFW if window creation fails
         throw std::runtime_error("Failed to create GLFW window");
     }
-    // Store 'this' pointer to retrieve in static callbacks if needed
-    // glfwSetWindowUserPointer(glfwWindow_, this);
+    // Store 'this' pointer to retrieve in static callbacks
+    glfwSetWindowUserPointer(glfwWindow_, this);
+
     setupCallbacks();
     makeContextCurrent(); // Make context current immediately after creation
     setVSyncEnabled(isVSyncEnabled_);
@@ -98,18 +99,20 @@ void Window::setVSyncEnabled(bool enabled)
 
     std::cout << "VSync " << (enabled ? "enabled" : "disabled") << std::endl;
 }
+
 // Static callback implementation
 void Window::framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     // Make sure the viewport matches the new window dimensions; note that width and
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
-    // You might want to store the new size if your application logic depends on it
-    // Window* userWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    // if (userWindow) {
-    //     userWindow->width_ = width; // Be careful with direct member access if needed
-    //     userWindow->height_ = height;
-    // }
+
+    auto self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+    if (self)
+    {
+        self->width_ = width;
+        self->height_ = height;
+    }
 }
 
 bool Window::initializeGLFW()
