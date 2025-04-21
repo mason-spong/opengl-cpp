@@ -1,47 +1,72 @@
 # Compiler
-CXX = clang++
+CXX := clang++
 
-# Compiler flags:
-# -Wall -Wextra: Enable common warnings
-# -I/opt/homebrew/opt/glfw/include: Add Homebrew's actual GLFW include path
-# -I.: Add the current directory to the include path so the compiler finds the 'glm' folder
-# -DGL_SILENCE_DEPRECATION: Silence deprecation warnings for OpenGL functions on macOS
-CXXFLAGS = -g -O0 -Wall -Wextra -fno-omit-frame-pointer -I/opt/homebrew/opt/glfw/include -Ilibs -Iinclude -DGL_SILENCE_DEPRECATION -std=c++17
+# Allow overriding build type: make BUILD_TYPE=debug (defaults to release)
+BUILD_TYPE ?= release
 
-# Linker flags:
-# -L/opt/homebrew/opt/glfw/lib: Add Homebrew's actual GLFW library path
-# -lglfw: Link against the GLFW library
-LDFLAGS = -L/opt/homebrew/opt/glfw/lib -lglfw 
+# Directories (simple assignment so it's expanded at parse time)
+SRC_DIR    := src
+BUILD_DIR  := build/$(BUILD_TYPE)
+OBJ_DIR    := $(BUILD_DIR)/obj
+BIN_DIR    := $(BUILD_DIR)/bin
 
-# Frameworks:
-# -framework OpenGL: Link against the macOS OpenGL framework
-FRAMEWORKS = -framework OpenGL
+# Executable
+TARGET_NAME := opengl_cube
+TARGET_EXEC := $(BIN_DIR)/$(TARGET_NAME)
 
-# Target executable name
-TARGET = opengl_cube
+# Source → object mapping
+SRCS := $(wildcard $(SRC_DIR)/*.cpp)
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
-# Source files - Automatically find all .cpp files in the src directory
-SRCS = $(wildcard src/*.cpp)
+# Flags (common + per-build‑type)
+COMMON_CXXFLAGS  := -Wall -Wextra \
+                    -I/opt/homebrew/opt/glfw/include \
+                    -Ilibs -Iinclude \
+                    -DGL_SILENCE_DEPRECATION \
+                    -std=c++17
+COMMON_LDFLAGS   := -L/opt/homebrew/opt/glfw/lib -lglfw
+COMMON_FRAMEWORKS:= -framework OpenGL
 
-# Object files (generated from source files)
-OBJS = $(SRCS:.cpp=.o)
+ifeq ($(BUILD_TYPE),debug)
+  BUILD_CXXFLAGS := -g -O0 -fno-omit-frame-pointer
+  BUILD_DEFINES   :=
+else
+  BUILD_CXXFLAGS := -O2
+  BUILD_DEFINES   := -DNDEBUG
+endif
 
-# Default target: build the executable
-all: $(TARGET)
+CXXFLAGS   := $(COMMON_CXXFLAGS) $(BUILD_CXXFLAGS) $(BUILD_DEFINES)
+LDFLAGS    := $(COMMON_LDFLAGS)
+FRAMEWORKS := $(COMMON_FRAMEWORKS)
 
-# Rule to build the executable from object files
-$(TARGET): $(OBJS)
-	$(CXX) $(OBJS) $(LDFLAGS) $(FRAMEWORKS) -o $(TARGET)
+# ——— PHONY targets ———
+.PHONY: all debug release clean
 
+all: $(TARGET_EXEC)
 
-# Rule to compile .cpp files into .o object files
-# $<: the first prerequisite (the .cpp file)
-# $@: the target (the .o file)
-%.o: %.cpp
+debug:
+	@$(MAKE) BUILD_TYPE=debug all
+
+release:
+	@$(MAKE) BUILD_TYPE=release all
+
+clean:
+	@echo "Cleaning all build artifacts..."
+	rm -rf build
+
+# ——— Link the final executable ———
+$(TARGET_EXEC): $(OBJS) | $(BIN_DIR)
+	@echo "Linking $(BUILD_TYPE) build: $@"
+	$(CXX) $(OBJS) $(LDFLAGS) $(FRAMEWORKS) -o $@
+
+# ——— Compile each .cpp into .o ———
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	@echo "Compiling $(BUILD_TYPE): $< → $@"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean target: remove generated files
-clean:
-	rm -f $(OBJS) $(TARGET)
+# ——— Ensure directories exist ———
+$(OBJ_DIR) $(BIN_DIR):
+	@mkdir -p $@
 
-.PHONY: all clean
+# Disable suffix rules
+.SUFFIXES:
