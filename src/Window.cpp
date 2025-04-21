@@ -31,6 +31,8 @@ Window::Window(int width, int height, const std::string &title, bool isVSyncEnab
     makeContextCurrent(); // Make context current immediately after creation
     setVSyncEnabled(isVSyncEnabled_);
 
+    glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // --- IMPORTANT: Initialize OpenGL function pointers (if using Glad/GLEW) ---
     // If you were using Glad:
     // if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {

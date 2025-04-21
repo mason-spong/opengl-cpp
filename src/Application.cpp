@@ -5,7 +5,11 @@
 #include "Renderer.h"
 #include "Camera.h" // Include Camera.h
 #include "World.h"  // Include World.h
+#include "glm/geometric.hpp"
+#include "glm/common.hpp"
+#include "glm/trigonometric.hpp"
 
+#include <cmath>
 #include <cstddef>
 #include <OpenGL/gl.h>
 #include <exception>
@@ -282,25 +286,76 @@ void Application::setupScene()
 
 void Application::processInput()
 {
-    // Placeholder for input handling
-    // Example: Check for Escape key press
-    if (glfwGetKey(window_->getGLFWwindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    GLFWwindow *w = window_->getGLFWwindow();
+
+    // -- keyboard --
+    input_.forward = (glfwGetKey(w, GLFW_KEY_W) == GLFW_PRESS);
+    input_.backward = (glfwGetKey(w, GLFW_KEY_S) == GLFW_PRESS);
+    input_.left = (glfwGetKey(w, GLFW_KEY_A) == GLFW_PRESS);
+    input_.right = (glfwGetKey(w, GLFW_KEY_D) == GLFW_PRESS);
+    input_.up = (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS);
+    input_.down = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
+    if (glfwGetKey(w, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(w, true);
+
+    // -- mouse --
+    double xpos, ypos;
+    glfwGetCursorPos(w, &xpos, &ypos);
+    if (firstMouse_)
     {
-        glfwSetWindowShouldClose(window_->getGLFWwindow(), true);
+        lastX_ = xpos;
+        lastY_ = ypos;
+        firstMouse_ = false;
     }
-    // Add camera movement controls, etc. here
+    input_.mouseDX = float(xpos - lastX_);
+    input_.mouseDY = float(lastY_ - ypos); // reversed: y goes down→up
+    lastX_ = xpos;
+    lastY_ = ypos;
 }
 
-void Application::update(float deltaTime)
+void Application::update(float dt)
 {
-    // Placeholder for game state updates
-    // Example: Rotate the camera slowly around the origin
-    // static float totalTime = 0.0f;
-    // totalTime += deltaTime;
-    // float radius = 7.0f;
-    // camera_.position.x = sin(totalTime * 0.5f) * radius;
-    // camera_.position.z = cos(totalTime * 0.5f) * radius;
-    // camera_.target = glm::vec3(0.0f, 0.0f, 0.0f); // Look at origin
+    // --- keyboard move ---
+    glm::vec3 forwardDir = glm::normalize(camera_.target - camera_.position);
+    glm::vec3 rightDir = glm::normalize(glm::cross(forwardDir, camera_.up));
+
+    glm::vec3 motion(0.0f);
+    if (input_.forward)
+        motion += forwardDir;
+    if (input_.backward)
+        motion -= forwardDir;
+    if (input_.right)
+        motion += rightDir;
+    if (input_.left)
+        motion -= rightDir;
+    if (input_.up)
+        motion += camera_.up;
+    if (input_.down)
+        motion -= camera_.up;
+
+    if (glm::length(motion) > 0.0f)
+    {
+        motion = glm::normalize(motion) * cameraSpeed_ * dt;
+        camera_.position += motion;
+        camera_.target += motion;
+    }
+
+    // --- mouse look ---
+    yaw_ += input_.mouseDX * mouseSens_;
+    pitch_ += input_.mouseDY * mouseSens_;
+    // constrain pitch
+    pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+    front.y = sin(glm::radians(pitch_));
+    front.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+    front = glm::normalize(front);
+
+    camera_.target = camera_.position + front;
+
+    // reset mouse deltas for next frame
+    input_.mouseDX = input_.mouseDY = 0.0f;
 }
 
 void Application::render()
