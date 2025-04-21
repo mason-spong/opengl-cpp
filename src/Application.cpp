@@ -76,7 +76,10 @@ namespace CubeData
 Application::Application()
     : camera_(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, 800.0f / 600.0f, 0.1f, 100.0f) // Initialize camera here
 {
-    // Constructor body (if needed)
+    glm::vec3 front = glm::normalize(camera_.target - camera_.position);
+    yaw_ = glm::degrees(atan2(front.z, front.x));
+    pitch_ = glm::degrees(asin(front.y));
+
     std::cout << "Application created." << std::endl;
 }
 

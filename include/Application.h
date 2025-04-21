@@ -51,7 +51,7 @@ private:
     InputState input_;
     float cameraSpeed_ = 5.0f; // movement speed
     float mouseSens_ = 0.1f;   // look sensitivity
-    float yaw_ = -90.0f;       // init so forward=(0,0,-1)
+    float yaw_ = 0.0f;
     float pitch_ = 0.0f;
     bool firstMouse_ = true;
     double lastX_ = 400.0; // center of 800×600 window
