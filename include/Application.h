@@ -35,6 +35,10 @@ private:
     World gameWorld_;
     Camera camera_;
 
+    int frameCount_ = 0;
+    float totalTime_ = 0.0f;          // Accumulates delta time
+    float timeSinceLastPrint_ = 0.0f; // Time since the last FPS was printed
+
     // Private helper methods for initialization steps
     bool initWindow();
     bool initOpenGL(); // For GL settings like depth test

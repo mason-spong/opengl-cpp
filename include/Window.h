@@ -10,7 +10,7 @@ class Window
 {
 public:
     // Constructor initializes GLFW and creates the window
-    Window(int width, int height, const std::string &title);
+    Window(int width, int height, const std::string &title, bool isVSyncEnabled);
     // Destructor cleans up GLFW resources
     ~Window();
 
@@ -30,6 +30,10 @@ public:
     // Make the OpenGL context of this window current on the calling thread
     void makeContextCurrent() const;
 
+    // Enable or disable VSync. Context must already be current,
+    // otherwise a runtime_error is thrown.
+    void setVSyncEnabled(bool enabled);
+
     // Getters (optional, but can be useful)
     int getWidth() const { return width_; }
     int getHeight() const { return height_; }
@@ -43,6 +47,7 @@ private:
     int width_;
     int height_;
     std::string title_;
+    bool isVSyncEnabled_;
 
     bool initializeGLFW();
     bool createWindow();

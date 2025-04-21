@@ -21,6 +21,11 @@
 #include <OpenGL/gl3.h>
 #endif
 
+namespace
+{
+    constexpr bool kVSyncEnabled = false;
+}
+
 // --- Cube Data (Moved from main.cpp) ---
 // Could be in a separate file or class later
 namespace CubeData
@@ -91,12 +96,72 @@ bool Application::initialize()
     return true;
 }
 
+void Application::run()
+{
+    if (!window_)
+    {
+        std::cerr << "Cannot run application without a window." << std::endl;
+        return;
+    }
+
+    std::cout << "Starting main loop..." << std::endl;
+    // Simple delta time calculation
+    auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
+    // Reset FPS counters when starting the loop (just in case run() is called multiple times)
+    frameCount_ = 0;
+    totalTime_ = 0.0f;
+    timeSinceLastPrint_ = 0.0f;
+
+    while (!window_->shouldClose())
+    {
+        // Calculate delta time
+        auto currentFrameTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> diff = currentFrameTime - lastFrameTime;
+        float deltaTime = diff.count();
+        lastFrameTime = currentFrameTime;
+
+        frameCount_++;                    // Increment frame count
+        totalTime_ += deltaTime;          // Add delta time to total
+        timeSinceLastPrint_ += deltaTime; // Add delta time to time since last print
+
+        // Check if 5 seconds have passed
+        if (timeSinceLastPrint_ >= 5.0f)
+        {
+            // Calculate average FPS over the accumulated time
+            float averageFPS = (float)frameCount_ / totalTime_; // Ensure float division
+
+            // Print the result
+            std::cout << "Average FPS: " << averageFPS << std::endl;
+
+            // Reset the counters for the next 5-second interval
+            frameCount_ = 0;
+            totalTime_ = 0.0f;
+            timeSinceLastPrint_ = 0.0f; // Reset the timer
+        }
+
+        // 1. Input
+        processInput();
+
+        // 2. Update Game Logic
+        update(deltaTime);
+
+        // 3. Render
+        render();
+
+        // 4. Swap Buffers and Poll Events
+        window_->swapBuffers();
+        window_->pollEvents();
+    }
+    std::cout << "Exiting main loop." << std::endl;
+}
+
 bool Application::initWindow()
 {
     try
     {
         // Use smart pointer for automatic memory management
-        window_ = std::make_unique<Window>(800, 600, "OpenGL Cube World - Refactored");
+        window_ = std::make_unique<Window>(800, 600, "OpenGL Cube World - Refactored", kVSyncEnabled);
         // Window constructor handles GLFW init, window creation, context, and GLAD (if used)
     }
     catch (const std::runtime_error &e)
@@ -182,42 +247,6 @@ void Application::setupScene()
     // maybe via window_->getWidth(), window_->getHeight() or callbacks.
     // For now, using the initial values.
     // camera_.aspectRatio = static_cast<float>(window_->getWidth()) / window_->getHeight();
-}
-
-void Application::run()
-{
-    if (!window_)
-    {
-        std::cerr << "Cannot run application without a window." << std::endl;
-        return;
-    }
-
-    std::cout << "Starting main loop..." << std::endl;
-    // Simple delta time calculation
-    auto lastFrameTime = std::chrono::high_resolution_clock::now();
-
-    while (!window_->shouldClose())
-    {
-        // Calculate delta time
-        auto currentFrameTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> diff = currentFrameTime - lastFrameTime;
-        float deltaTime = diff.count();
-        lastFrameTime = currentFrameTime;
-
-        // 1. Input
-        processInput();
-
-        // 2. Update Game Logic
-        update(deltaTime);
-
-        // 3. Render
-        render();
-
-        // 4. Swap Buffers and Poll Events
-        window_->swapBuffers();
-        window_->pollEvents();
-    }
-    std::cout << "Exiting main loop." << std::endl;
 }
 
 void Application::processInput()

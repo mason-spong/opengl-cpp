@@ -12,22 +12,8 @@
 #include <OpenGL/gl3.h> // Or Glad/GLEW if you switch
 #endif
 
-// Static callback implementation
-void Window::framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    // Make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-    // You might want to store the new size if your application logic depends on it
-    // Window* userWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    // if (userWindow) {
-    //     userWindow->width_ = width; // Be careful with direct member access if needed
-    //     userWindow->height_ = height;
-    // }
-}
-
-Window::Window(int width, int height, const std::string &title)
-    : width_(width), height_(height), title_(title)
+Window::Window(int width, int height, const std::string &title, bool isVSyncEnabled)
+    : width_(width), height_(height), title_(title), isVSyncEnabled_(isVSyncEnabled)
 {
     if (!initializeGLFW())
     {
@@ -42,6 +28,7 @@ Window::Window(int width, int height, const std::string &title)
     // glfwSetWindowUserPointer(glfwWindow_, this);
     setupCallbacks();
     makeContextCurrent(); // Make context current immediately after creation
+    setVSyncEnabled(isVSyncEnabled_);
 
     // --- IMPORTANT: Initialize OpenGL function pointers (if using Glad/GLEW) ---
     // If you were using Glad:
@@ -51,7 +38,8 @@ Window::Window(int width, int height, const std::string &title)
     //     throw std::runtime_error("Failed to initialize GLAD");
     // }
     // On macOS with the framework, this step is usually implicit after context creation.
-    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout
+        << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
 }
 
 Window::~Window()
@@ -62,6 +50,66 @@ Window::~Window()
     }
     glfwTerminate(); // Terminate GLFW when the last window is destroyed
     std::cout << "Window and GLFW cleaned up." << std::endl;
+}
+
+bool Window::shouldClose() const
+{
+    return glfwWindowShouldClose(glfwWindow_);
+}
+
+void Window::pollEvents() const
+{
+    glfwPollEvents();
+}
+
+void Window::swapBuffers() const
+{
+    glfwSwapBuffers(glfwWindow_);
+}
+
+void Window::makeContextCurrent() const
+{
+    glfwMakeContextCurrent(glfwWindow_);
+
+    if (isVSyncEnabled_)
+    {
+        std::cout << "Setting VSync enabled" << std::endl;
+        glfwSwapInterval(0);
+    }
+    else
+    {
+        std::cout << "Setting VSync disabled" << std::endl;
+        glfwSwapInterval(1);
+    }
+}
+
+void Window::setVSyncEnabled(bool enabled)
+{
+    // Ensure this window’s context is current
+    if (glfwGetCurrentContext() != glfwWindow_)
+    {
+        throw std::runtime_error(
+            "Window::setVSyncEnabled requires this window's context to be current");
+    }
+
+    isVSyncEnabled_ = enabled;
+    // 1 = enable VSync, 0 = disable
+    glfwSwapInterval(enabled ? 1 : 0);
+
+    std::cout << "VSync " << (enabled ? "enabled" : "disabled") << std::endl;
+}
+// Static callback implementation
+void Window::framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    // Make sure the viewport matches the new window dimensions; note that width and
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+    // You might want to store the new size if your application logic depends on it
+    // Window* userWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    // if (userWindow) {
+    //     userWindow->width_ = width; // Be careful with direct member access if needed
+    //     userWindow->height_ = height;
+    // }
 }
 
 bool Window::initializeGLFW()
@@ -97,24 +145,4 @@ void Window::setupCallbacks()
     // Set the framebuffer size callback
     glfwSetFramebufferSizeCallback(glfwWindow_, framebuffer_size_callback);
     // Add other callbacks here (keyboard, mouse, etc.) as needed
-}
-
-void Window::makeContextCurrent() const
-{
-    glfwMakeContextCurrent(glfwWindow_);
-}
-
-bool Window::shouldClose() const
-{
-    return glfwWindowShouldClose(glfwWindow_);
-}
-
-void Window::pollEvents() const
-{
-    glfwPollEvents();
-}
-
-void Window::swapBuffers() const
-{
-    glfwSwapBuffers(glfwWindow_);
 }

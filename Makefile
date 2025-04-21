@@ -6,7 +6,7 @@ CXX = clang++
 # -I/opt/homebrew/opt/glfw/include: Add Homebrew's actual GLFW include path
 # -I.: Add the current directory to the include path so the compiler finds the 'glm' folder
 # -DGL_SILENCE_DEPRECATION: Silence deprecation warnings for OpenGL functions on macOS
-CXXFLAGS = -Wall -Wextra -I/opt/homebrew/opt/glfw/include -Ilibs -Iinclude -DGL_SILENCE_DEPRECATION -std=c++17
+CXXFLAGS = -g -O0 -Wall -Wextra -fno-omit-frame-pointer -I/opt/homebrew/opt/glfw/include -Ilibs -Iinclude -DGL_SILENCE_DEPRECATION -std=c++17
 
 # Linker flags:
 # -L/opt/homebrew/opt/glfw/lib: Add Homebrew's actual GLFW library path
@@ -32,6 +32,7 @@ all: $(TARGET)
 # Rule to build the executable from object files
 $(TARGET): $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) $(FRAMEWORKS) -o $(TARGET)
+
 
 # Rule to compile .cpp files into .o object files
 # $<: the first prerequisite (the .cpp file)
