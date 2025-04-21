@@ -27,7 +27,7 @@
 
 namespace
 {
-    constexpr bool kVSyncEnabled = true;
+    constexpr bool kVSyncEnabled = false;
 }
 
 // --- Cube Data (Moved from main.cpp) ---
@@ -168,12 +168,29 @@ void Application::run()
         // 1. Input
         processInput();
 
+        // 1.5 Treat mouse look for camera as real time subsystem, update every frame
+        yaw_ += input_.mouseDX * mouseSens_;
+        pitch_ += input_.mouseDY * mouseSens_;
+        // constrain pitch
+        pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
+
+        glm::vec3 front;
+        front.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+        front.y = sin(glm::radians(pitch_));
+        front.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+        front = glm::normalize(front);
+
+        camera_.target = camera_.position + front;
+
+        // reset mouse deltas for next frame
+        input_.mouseDX = input_.mouseDY = 0.0f;
+
         // 2. Update Game Logic (fixed physics step consuming the fime "created" by frame)
         while (accumulator >= dt)
         {
             // previousState = currentState;
             // integrate(currentState, t, dt);
-            update(deltaTime);
+            update(static_cast<float>(dt));
             t += dt;
             accumulator -= dt;
         }
@@ -303,7 +320,7 @@ void Application::processInput()
     input_.left = (glfwGetKey(w, GLFW_KEY_A) == GLFW_PRESS);
     input_.right = (glfwGetKey(w, GLFW_KEY_D) == GLFW_PRESS);
     input_.up = (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS);
-    input_.down = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
+    input_.down = (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
 
     // -- mouse --
     double xpos, ypos;
@@ -346,23 +363,6 @@ void Application::update(float dt)
         camera_.position += motion;
         camera_.target += motion;
     }
-
-    // --- mouse look ---
-    yaw_ += input_.mouseDX * mouseSens_;
-    pitch_ += input_.mouseDY * mouseSens_;
-    // constrain pitch
-    pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-    front.y = sin(glm::radians(pitch_));
-    front.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-    front = glm::normalize(front);
-
-    camera_.target = camera_.position + front;
-
-    // reset mouse deltas for next frame
-    input_.mouseDX = input_.mouseDY = 0.0f;
 }
 
 void Application::render()
