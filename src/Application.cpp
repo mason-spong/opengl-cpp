@@ -34,41 +34,258 @@ namespace
 // Could be in a separate file or class later
 namespace CubeData
 {
+    // 24 vertices: 4 per face × 6 faces
+    // Each vertex: position (3), color (3), normal (3) = 9 floats
     const float vertices[] = {
-        // Positions          // Colors
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // Back bottom left (Red)
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Back bottom right (Red)
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,   // Back top right (Red)
-        -0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Back top left (Red)
+        // Back face (normal = 0,0,-1)
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, // Front bottom left (Green)
-        0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Front bottom right (Green)
-        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,   // Front top right (Green)
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Front top left (Green)
+        // Front face (normal = 0,0,1)
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.5f,
+        -0.5f,
+        0.5f,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.5f,
+        0.5f,
+        0.5f,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        -0.5f,
+        0.5f,
+        0.5f,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+
+        // Left face (normal = -1,0,0)
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0,
+        0,
+        1,
+        -1,
+        0,
+        0,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        0,
+        0,
+        1,
+        -1,
+        0,
+        0,
+        -0.5f,
+        0.5f,
+        0.5f,
+        0,
+        0,
+        1,
+        -1,
+        0,
+        0,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0,
+        0,
+        1,
+        -1,
+        0,
+        0,
+
+        // Right face (normal = 1,0,0)
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+
+        // Bottom face (normal = 0,-1,0)
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        0,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        0,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        0,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        0,
+
+        // Top face (normal = 0,1,0)
+        -0.5f,
+        0.5f,
+        -0.5f,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0.5f,
+        0.5f,
+        -0.5f,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0.5f,
+        0.5f,
+        0.5f,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        -0.5f,
+        0.5f,
+        0.5f,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
     };
 
+    // Indices: 2 triangles per face, 6 faces
     const unsigned int indices[] = {
-        // Back face
-        0, 1, 2, 2, 3, 0,
-        // Front face
-        4, 5, 6, 6, 7, 4,
-        // Left face
-        4, 0, 3, 3, 7, 4,
-        // Right face
-        1, 5, 6, 6, 2, 1,
-        // Bottom face
-        0, 4, 5, 5, 1, 0,
-        // Top face
-        3, 2, 6, 6, 7, 3};
-
-    const std::vector<std::pair<unsigned int, size_t>> attributeLayout = {
-        {0, 0},                // Position attribute at location 0, offset 0
-        {1, 3 * sizeof(float)} // Color attribute at location 1, offset 3 floats
+        0, 1, 2, 2, 3, 0,       // back
+        4, 5, 6, 6, 7, 4,       // front
+        8, 9, 10, 10, 11, 8,    // left
+        12, 13, 14, 14, 15, 12, // right
+        16, 17, 18, 18, 19, 16, // bottom
+        20, 21, 22, 22, 23, 20  // top
     };
 
-    const size_t vertexStride = 6 * sizeof(float); // 3 pos + 3 color
+    // Now: pos(loc=0), color(loc=1), normal(loc=2)
+    const std::vector<std::pair<unsigned int, size_t>> attributeLayout = {
+        {0, 0},                 // vec3 position
+        {1, 3 * sizeof(float)}, // vec3 color
+        {2, 6 * sizeof(float)}  // vec3 normal
+    };
 
-} // namespace CubeData
+    // Each vertex = 9 floats
+    const size_t vertexStride = 9 * sizeof(float);
+}
 // --- End Cube Data ---
 
 // --- Application Implementation ---

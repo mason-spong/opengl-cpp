@@ -1,10 +1,16 @@
-#version 330 core // Use OpenGL version 3.3 with core profile
+#version 330 core
 
-in vec3 vColor; // Input color from the vertex shader (interpolated)
+in  vec3 vColor;
+in  vec3 vNormal;
+out vec4 FragColor;
 
-out vec4 FragColor; // Output final color for the pixel
+void main() {
+    // Remap normals from [-1,1] to [0,1] for color‑coding:
+    vec3 normalColor = normalize(vNormal) * 0.5 + 0.5;
 
-void main()
-{
-    FragColor = vec4(vColor, 1.0); // Set the pixel color
+    // Option A: show normals *instead of* your mesh color
+    FragColor = vec4(normalColor, 1.0);
+
+    // Option B: blend normals with vertex color
+    // FragColor = vec4(mix(vColor, normalColor, 0.5), 1.0);
 }

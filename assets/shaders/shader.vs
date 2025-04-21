@@ -1,16 +1,22 @@
-#version 330 core // Use OpenGL version 3.3 with core profile
+#version 330 core
 
-layout (location = 0) in vec3 aPos; // Input vertex position from attribute 0
-layout (location = 1) in vec3 aColor; // Input vertex color from attribute 1
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aColor;
+layout(location = 2) in vec3 aNormal;
 
-out vec3 vColor; // Output color to the fragment shader
+out vec3 vColor;
+out vec3 vNormal;
 
-uniform mat4 model; // Transformation matrix for object's position/rotation/scale
-uniform mat4 view; // Transformation matrix for camera position/orientation
-uniform mat4 projection; // Transformation matrix for perspective/orthographic view
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-void main()
-{
-    gl_Position = projection * view * model * vec4(aPos, 1.0); // Calculate final vertex position
-    vColor = aColor; // Pass color through
+void main() {
+    // standard MVP
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    vColor  = aColor;
+
+    // To correctly transform normals under non‑uniform scale, use the normal matrix:
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+    vNormal = normalize(normalMatrix * aNormal);
 }
