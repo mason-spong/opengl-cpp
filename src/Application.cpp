@@ -133,20 +133,6 @@ void Application::run()
 
         accumulator += deltaTime;
 
-        while (accumulator >= dt)
-        {
-            // previousState = currentState;
-            // integrate(currentState, t, dt);
-            t += dt;
-            accumulator -= dt;
-        }
-
-        // EXAMPLE later we can interpolate the render to get the fractional physics step we could not perform in simulation
-        // const double alpha = accumulator / dt;
-        // State state = currentState * alpha +
-        //     previousState * ( 1.0 - alpha );
-        // render( state );
-
         frameCount_++;                    // Increment frame count
         totalTime_ += deltaTime;          // Add delta time to total
         timeSinceLastPrint_ += deltaTime; // Add delta time to time since last print
@@ -175,8 +161,21 @@ void Application::run()
         // 1. Input
         processInput();
 
-        // 2. Update Game Logic
-        update(deltaTime);
+        // 2. Update Game Logic (fixed physics step consuming the fime "created" by frame)
+        while (accumulator >= dt)
+        {
+            // previousState = currentState;
+            // integrate(currentState, t, dt);
+            update(deltaTime);
+            t += dt;
+            accumulator -= dt;
+        }
+
+        // EXAMPLE later we can interpolate the render to get the fractional physics step we could not perform in simulation
+        // const double alpha = accumulator / dt;
+        // State state = currentState * alpha +
+        //     previousState * ( 1.0 - alpha );
+        // render( state );
 
         // 3. Render
         render();
