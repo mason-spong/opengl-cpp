@@ -288,6 +288,12 @@ void Application::processInput()
 {
     GLFWwindow *w = window_->getGLFWwindow();
 
+    if (glfwGetKey(w, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(w, true);
+        return;
+    }
+
     // -- keyboard --
     input_.forward = (glfwGetKey(w, GLFW_KEY_W) == GLFW_PRESS);
     input_.backward = (glfwGetKey(w, GLFW_KEY_S) == GLFW_PRESS);
@@ -295,8 +301,6 @@ void Application::processInput()
     input_.right = (glfwGetKey(w, GLFW_KEY_D) == GLFW_PRESS);
     input_.up = (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS);
     input_.down = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
-    if (glfwGetKey(w, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(w, true);
 
     // -- mouse --
     double xpos, ypos;
