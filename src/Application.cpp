@@ -23,7 +23,7 @@
 
 namespace
 {
-    constexpr bool kVSyncEnabled = false;
+    constexpr bool kVSyncEnabled = true;
 }
 
 // --- Cube Data (Moved from main.cpp) ---
@@ -110,16 +110,42 @@ void Application::run()
 
     // Reset FPS counters when starting the loop (just in case run() is called multiple times)
     frameCount_ = 0;
-    totalTime_ = 0.0f;
-    timeSinceLastPrint_ = 0.0f;
+    double totalTime_ = 0.0;
+    double timeSinceLastPrint_ = 0.0;
+
+    double t = 0.0;
+    // Fixed physics delta time step for simulation consistency
+    double dt = 0.01;
+
+    double accumulator = 0.0;
 
     while (!window_->shouldClose())
     {
         // Calculate delta time
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> diff = currentFrameTime - lastFrameTime;
-        float deltaTime = diff.count();
+        std::chrono::duration<double> diff = currentFrameTime - lastFrameTime;
+        double deltaTime = diff.count();
+
+        // Guard against simulation death spiral if deltaTime gets too big
+        if (deltaTime > 0.25)
+            deltaTime = 0.25;
         lastFrameTime = currentFrameTime;
+
+        accumulator += deltaTime;
+
+        while (accumulator >= dt)
+        {
+            // previousState = currentState;
+            // integrate(currentState, t, dt);
+            t += dt;
+            accumulator -= dt;
+        }
+
+        // EXAMPLE later we can interpolate the render to get the fractional physics step we could not perform in simulation
+        // const double alpha = accumulator / dt;
+        // State state = currentState * alpha +
+        //     previousState * ( 1.0 - alpha );
+        // render( state );
 
         frameCount_++;                    // Increment frame count
         totalTime_ += deltaTime;          // Add delta time to total
@@ -129,15 +155,15 @@ void Application::run()
         if (timeSinceLastPrint_ >= 5.0f)
         {
             // Calculate average FPS over the accumulated time
-            float averageFPS = (float)frameCount_ / totalTime_; // Ensure float division
+            double averageFPS = (double)frameCount_ / totalTime_; // Ensure float division
 
             // Print the result
             std::cout << "Average FPS: " << averageFPS << std::endl;
 
             // Reset the counters for the next 5-second interval
             frameCount_ = 0;
-            totalTime_ = 0.0f;
-            timeSinceLastPrint_ = 0.0f; // Reset the timer
+            totalTime_ = 0.0;
+            timeSinceLastPrint_ = 0.0; // Reset the timer
         }
 
         // Update the camera projeciton in case user resizes window, not am defensively setting glViewport again here (is done in callback in Window too)
