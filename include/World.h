@@ -15,6 +15,9 @@ enum class BlockType : uint8_t
     AIR = 0,
     DIRT = 1,
     STONE = 2,
+    SAND = 3,
+    GRASS = 4,
+    WOOD_OAK = 5,
 };
 
 class World
