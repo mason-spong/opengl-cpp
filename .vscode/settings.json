@@ -45,7 +45,9 @@
         "vector": "cpp",
         "sstream": "cpp",
         "fstream": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "__split_buffer": "cpp",
+        "deque": "cpp"
     },
     // This is the correct setting to turn Clang-Tidy on or off
     "C_Cpp.codeAnalysis.clangTidy.enabled": true,

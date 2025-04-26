@@ -34,21 +34,14 @@ void Renderer::render(const World &world, const Camera &camera)
     // Bind the mesh (can be done once if all objects use the same mesh)
     meshToDraw.bind();
 
-    // Iterate through objects in the world and draw them
-    const auto &blocks = world.getBlocksToRender();
-    for (const auto &blockPos : blocks)
-    {
-        // Calculate the model matrix for this specific block
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, blockPos); // Move the block to its world position
-        // Add rotation or scale here if blocks could be rotated/scaled individually
+    // Calculate the model matrix for this specific block
+    glm::mat4 model = glm::mat4(1.0f);
 
-        // Pass the model matrix to the shader
-        shaderToUse.setMatrix4("model", model);
+    // Pass the model matrix to the shader
+    shaderToUse.setMatrix4("model", model);
 
-        // Draw the mesh using the bound VAO and active shader
-        glDrawElements(GL_TRIANGLES, meshToDraw.indexCount, GL_UNSIGNED_INT, 0);
-    }
+    // Draw the mesh using the bound VAO and active shader
+    glDrawElements(GL_TRIANGLES, meshToDraw.indexCount, GL_UNSIGNED_INT, 0);
 
     meshToDraw.unbind(); // Unbind mesh after drawing
     glUseProgram(0);     // Unbind shader after drawing

@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include "Camera.h" // Include Camera.h
 #include "World.h"  // Include World.h
+#include "MeshBuilder.h"
+#include "MeshData.h"
 #include "glm/geometric.hpp"
 #include "glm/common.hpp"
 #include "glm/trigonometric.hpp"
@@ -29,264 +31,6 @@ namespace
 {
     constexpr bool kVSyncEnabled = false;
 }
-
-// --- Cube Data (Moved from main.cpp) ---
-// Could be in a separate file or class later
-namespace CubeData
-{
-    // 24 vertices: 4 per face × 6 faces
-    // Each vertex: position (3), color (3), normal (3) = 9 floats
-    const float vertices[] = {
-        // Back face (normal = 0,0,-1)
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        1,
-        0,
-        0,
-        0,
-        0,
-        -1,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        1,
-        0,
-        0,
-        0,
-        0,
-        -1,
-        0.5f,
-        0.5f,
-        -0.5f,
-        1,
-        0,
-        0,
-        0,
-        0,
-        -1,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        1,
-        0,
-        0,
-        0,
-        0,
-        -1,
-
-        // Front face (normal = 0,0,1)
-        -0.5f,
-        -0.5f,
-        0.5f,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0.5f,
-        -0.5f,
-        0.5f,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0.5f,
-        0.5f,
-        0.5f,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-
-        // Left face (normal = -1,0,0)
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        0,
-        0,
-        1,
-        -1,
-        0,
-        0,
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0,
-        0,
-        1,
-        -1,
-        0,
-        0,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0,
-        0,
-        1,
-        -1,
-        0,
-        0,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        0,
-        0,
-        1,
-        -1,
-        0,
-        0,
-
-        // Right face (normal = 1,0,0)
-        0.5f,
-        -0.5f,
-        -0.5f,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0.5f,
-        -0.5f,
-        0.5f,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0.5f,
-        0.5f,
-        0.5f,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0.5f,
-        0.5f,
-        -0.5f,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-
-        // Bottom face (normal = 0,-1,0)
-        -0.5f,
-        -0.5f,
-        -0.5f,
-        1,
-        0,
-        1,
-        0,
-        -1,
-        0,
-        -0.5f,
-        -0.5f,
-        0.5f,
-        1,
-        0,
-        1,
-        0,
-        -1,
-        0,
-        0.5f,
-        -0.5f,
-        0.5f,
-        1,
-        0,
-        1,
-        0,
-        -1,
-        0,
-        0.5f,
-        -0.5f,
-        -0.5f,
-        1,
-        0,
-        1,
-        0,
-        -1,
-        0,
-
-        // Top face (normal = 0,1,0)
-        -0.5f,
-        0.5f,
-        -0.5f,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0.5f,
-        0.5f,
-        -0.5f,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0.5f,
-        0.5f,
-        0.5f,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        -0.5f,
-        0.5f,
-        0.5f,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-    };
-
-    // Indices: 2 triangles per face, 6 faces
-    const unsigned int indices[] = {
-        0, 1, 2, 2, 3, 0,       // back
-        4, 5, 6, 6, 7, 4,       // front
-        8, 9, 10, 10, 11, 8,    // left
-        12, 13, 14, 14, 15, 12, // right
-        16, 17, 18, 18, 19, 16, // bottom
-        20, 21, 22, 22, 23, 20  // top
-    };
-
-    // Now: pos(loc=0), color(loc=1), normal(loc=2)
-    const std::vector<std::pair<unsigned int, size_t>> attributeLayout = {
-        {0, 0},                 // vec3 position
-        {1, 3 * sizeof(float)}, // vec3 color
-        {2, 6 * sizeof(float)}  // vec3 normal
-    };
-
-    // Each vertex = 9 floats
-    const size_t vertexStride = 9 * sizeof(float);
-}
-// --- End Cube Data ---
 
 // --- Application Implementation ---
 
@@ -313,9 +57,11 @@ bool Application::initialize()
         return false;
     if (!initOpenGL())
         return false; // Initialize GL state *after* context is current
+
+    setupScene(); // Populate world etc.
+
     if (!loadResources())
         return false;
-    setupScene(); // Populate world etc.
     std::cout << "Application initialized successfully." << std::endl;
     return true;
 }
@@ -475,13 +221,22 @@ bool Application::loadResources()
     }
 
     // Create Mesh
+
+    MeshData worldMeshData;
+
+    MeshBuilder::generateWorldMesh(gameWorld_, worldMeshData);
+
+    std::vector<float> vertices = worldMeshData.getInterleavedVertices();
+
     try
     {
-        cubeMesh_ = std::make_unique<Mesh>(
-            CubeData::vertices, sizeof(CubeData::vertices),
-            CubeData::indices, sizeof(CubeData::indices),
-            CubeData::vertexStride, CubeData::attributeLayout);
-        if (cubeMesh_->VAO == 0)
+        worldMesh_ = std::make_unique<Mesh>(vertices.data(),
+                                            vertices.size() * sizeof(float),
+                                            worldMeshData.indices.data(),
+                                            worldMeshData.indices.size() * sizeof(unsigned int),
+                                            worldMeshData.getVertexStride(),
+                                            worldMeshData.attributeLayout);
+        if (worldMesh_->VAO == 0)
         { // Check if VAO creation failed (though Mesh constructor doesn't explicitly return status)
             throw std::runtime_error("Mesh VAO creation failed (or Mesh constructor indicated error).");
         }
@@ -497,7 +252,7 @@ bool Application::loadResources()
 
     // Create Renderer (after mesh and shader are ready)
     // Renderer constructor takes references, so ensure Mesh and Shader exist
-    renderer_ = std::make_unique<Renderer>(*cubeMesh_, *blockShader_);
+    renderer_ = std::make_unique<Renderer>(*worldMesh_, *blockShader_);
     std::cout << "Renderer created." << std::endl;
 
     return true;
@@ -505,27 +260,22 @@ bool Application::loadResources()
 
 void Application::setupScene()
 {
+
     std::cout << "Setting up scene..." << std::endl;
 
-    // --- Grid configuration ---
-    const int gridWidth = 10;   // number of cubes along X
-    const int gridDepth = 10;   // number of cubes along Z
-    const float spacing = 1.0f; // distance between cube centers
+    gameWorld_.addBlock(0, 0, 0);
+    gameWorld_.addBlock(1, 0, 0);
 
-    // Populate the game world with a flat grid at y = 0
-    for (int x = 0; x < gridWidth; ++x)
-    {
-        for (int z = 0; z < gridDepth; ++z)
-        {
-            float xpos = (x - gridWidth * 0.5f) * spacing;
-            float zpos = (z - gridDepth * 0.5f) * spacing;
-            gameWorld_.addBlock(glm::vec3(xpos, 0.0f, zpos));
-        }
-    }
+    gameWorld_.addBlock(0, 0, 1);
+    gameWorld_.addBlock(0, 0, 2);
 
-    std::cout << "Scene setup complete. "
-              << (gridWidth * gridDepth) << " blocks added."
-              << std::endl;
+    gameWorld_.addBlock(0, 1, 0);
+    gameWorld_.addBlock(0, 2, 0);
+    gameWorld_.addBlock(0, 3, 0);
+
+    std::cout
+        << "Scene setup complete. "
+        << std::endl;
 }
 
 void Application::processInput()
@@ -605,7 +355,7 @@ void Application::shutdown()
     // destructors of Window, Shader, Mesh, Renderer in the correct order.
     // Explicit cleanup can be done here if needed (e.g., detaching shaders before deleting program if not done in Shader destructor)
     renderer_.reset();
-    cubeMesh_.reset();
+    worldMesh_.reset();
     blockShader_.reset();
     window_.reset(); // This triggers Window destructor, cleaning up GLFW
     std::cout << "Application shutdown complete." << std::endl;

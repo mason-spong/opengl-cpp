@@ -43,7 +43,7 @@ private:
     // Core components
     std::unique_ptr<Window> window_;
     std::unique_ptr<Shader> blockShader_;
-    std::unique_ptr<Mesh> cubeMesh_;
+    std::unique_ptr<Mesh> worldMesh_;
     std::unique_ptr<Renderer> renderer_;
     World gameWorld_;
     Camera camera_;

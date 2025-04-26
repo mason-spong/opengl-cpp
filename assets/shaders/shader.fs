@@ -1,6 +1,5 @@
 #version 330 core
 
-in  vec3 vColor;
 in  vec3 vNormal;
 out vec4 FragColor;
 
@@ -10,7 +9,4 @@ void main() {
 
     // Option A: show normals *instead of* your mesh color
     FragColor = vec4(normalColor, 1.0);
-
-    // Option B: blend normals with vertex color
-    // FragColor = vec4(mix(vColor, normalColor, 0.5), 1.0);
 }

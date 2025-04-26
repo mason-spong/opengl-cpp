@@ -7,7 +7,7 @@
 #include <OpenGL/gl3.h>
 #endif
 
-Mesh::Mesh(const float *vertices, size_t vertexSize, const unsigned int *indices, size_t indexSize, size_t vertexStride, const std::vector<std::pair<unsigned int, size_t>> &attributeLayout)
+Mesh::Mesh(const float *vertices, size_t vertexSize, const unsigned int *indices, size_t indexSize, size_t vertexStride, const std::vector<std::tuple<unsigned int, size_t, int>> &attributeLayout)
 {
     indexCount = indexSize / sizeof(unsigned int);
 
@@ -23,13 +23,13 @@ Mesh::Mesh(const float *vertices, size_t vertexSize, const unsigned int *indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indices, GL_STATIC_DRAW);
 
-    // Configure vertex attributes based on the provided layout
     for (const auto &attr : attributeLayout)
     {
-        unsigned int location = attr.first;
-        size_t offset = attr.second;
-        // Assuming size=3, type=GL_FLOAT, normalized=GL_FALSE for this cube example
-        glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, vertexStride, (void *)offset);
+        unsigned int location = std::get<0>(attr);
+        size_t offset = std::get<1>(attr);
+        int size = std::get<2>(attr);
+
+        glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, vertexStride, (void *)offset);
         glEnableVertexAttribArray(location);
     }
 
