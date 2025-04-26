@@ -264,10 +264,14 @@ void Application::setupScene()
     std::cout << "Setting up scene..." << std::endl;
 
     gameWorld_.addBlock(0, 0, 0);
+
     gameWorld_.addBlock(1, 0, 0);
+    gameWorld_.addBlock(2, 0, 0);
+    gameWorld_.addBlock(3, 0, 0);
 
     gameWorld_.addBlock(0, 0, 1);
     gameWorld_.addBlock(0, 0, 2);
+    gameWorld_.addBlock(0, 0, 3);
 
     gameWorld_.addBlock(0, 1, 0);
     gameWorld_.addBlock(0, 2, 0);
