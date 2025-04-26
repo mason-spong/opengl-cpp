@@ -15,15 +15,15 @@ int World::getIndex(int x, int y, int z) const
 }
 
 // --- Constructor (from your provided code) ---
-World::World() : blocks(WORLD_VOLUME, 0) {}
+World::World() : blocks(WORLD_VOLUME, BlockType::AIR) {}
 
 // --- addBlock (from your provided code) ---
-void World::addBlock(int x, int y, int z)
+void World::addBlock(int x, int y, int z, BlockType blockType)
 {
     int index = getIndex(x, y, z);
     if (index != -1)
     {
-        blocks[index] = 1;
+        blocks[index] = blockType;
     }
 }
 
@@ -33,7 +33,7 @@ void World::removeBlock(int x, int y, int z)
     int index = getIndex(x, y, z);
     if (index != -1)
     {
-        blocks[index] = 0;
+        blocks[index] = BlockType::AIR;
     }
 }
 
@@ -46,6 +46,6 @@ bool World::isSolid(int x, int y, int z) const
     {
         return false;
     }
-    // Check if the block value is non-zero (assuming 1 means solid)
-    return blocks[index] != 0;
+    // Check if the block value is not AIR
+    return blocks[index] != BlockType::AIR;
 }

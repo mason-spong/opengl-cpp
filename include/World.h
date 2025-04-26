@@ -10,16 +10,24 @@ const int WORLD_HEIGHT = 16;
 const int WORLD_DEPTH = 16;
 const int WORLD_VOLUME = WORLD_WIDTH * WORLD_HEIGHT * WORLD_DEPTH;
 
+enum class BlockType : uint8_t
+{
+    AIR = 0,
+    DIRT = 1,
+    STONE = 2,
+};
+
 class World
 {
 private:
-    std::vector<uint8_t> blocks;
+    std::vector<BlockType> blocks;
     int getIndex(int x, int y, int z) const;
 
 public:
     World();
-    void addBlock(int x, int y, int z);
-    void removeBlock(int x, int y, int z);
+    void addBlock(int x, int y, int z, BlockType BlockType);
+    void removeBlock(int x, int y, int z); // set to AIR
+    BlockType getBlockType(int x, int y, int z);
 
     // --- New Method Declaration ---
     // Check if a block is solid (non-zero) at the specified coordinates

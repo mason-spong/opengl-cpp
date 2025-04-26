@@ -224,7 +224,7 @@ bool Application::loadResources()
     // Load Texture
 
     int x, y, n;
-    unsigned char *data = stbi_load("assets/textures/dirt.png", &x, &y, &n, 0);
+    unsigned char *data = stbi_load("assets/textures/stone_16x16.png", &x, &y, &n, 0);
 
     std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
 
@@ -236,8 +236,8 @@ bool Application::loadResources()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Repeat the texture vertically
 
     // Set filtering parameters for magnification (zooming in) and minification (zooming out)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);               // Use linear interpolation for magnification
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Use linear interpolation for minification with mipmaps
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Use linear interpolation for magnification
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
@@ -293,7 +293,7 @@ void Application::setupScene()
     {
         for (int x = 0; x < 16; ++x)
         {
-            gameWorld_.addBlock(x, 0, z);
+            gameWorld_.addBlock(x, 0, z, BlockType::DIRT);
         }
     }
 
