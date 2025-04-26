@@ -48,6 +48,8 @@ private:
     World gameWorld_;
     Camera camera_;
 
+    unsigned int blockTextureId_;
+
     InputState input_;
     float cameraSpeed_ = 5.0f; // movement speed
     float mouseSens_ = 0.1f;   // look sensitivity

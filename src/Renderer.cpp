@@ -16,7 +16,7 @@ Renderer::Renderer(const Mesh &mesh, const Shader &shader) : meshToDraw(mesh), s
     glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::render(const World &world, const Camera &camera)
+void Renderer::render(const World &world, const Camera &camera, unsigned int textureId)
 {
     // Clear buffers
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -39,6 +39,11 @@ void Renderer::render(const World &world, const Camera &camera)
 
     // Pass the model matrix to the shader
     shaderToUse.setMatrix4("model", model);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+
+    shaderToUse.setInt("textureSampler", 0);
 
     // Draw the mesh using the bound VAO and active shader
     glDrawElements(GL_TRIANGLES, meshToDraw.indexCount, GL_UNSIGNED_INT, 0);

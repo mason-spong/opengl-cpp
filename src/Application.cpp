@@ -22,6 +22,7 @@
 #include <stdexcept>    // For runtime_error
 #include <chrono>       // For delta time calculation
 #include <GLFW/glfw3.h> // Include the GLFW header
+#include "stb_image.h"
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -220,6 +221,31 @@ bool Application::loadResources()
         return false;
     }
 
+    // Load Texture
+
+    int x, y, n;
+    unsigned char *data = stbi_load("assets/textures/dirt.png", &x, &y, &n, 0);
+
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+
+    glGenTextures(1, &blockTextureId_);
+    glBindTexture(GL_TEXTURE_2D, blockTextureId_);
+
+    // Set wrapping parameters for S (horizontal) and T (vertical) texture coordinates
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Repeat the texture horizontally
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Repeat the texture vertically
+
+    // Set filtering parameters for magnification (zooming in) and minification (zooming out)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);               // Use linear interpolation for magnification
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Use linear interpolation for minification with mipmaps
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     // Create Mesh
 
     MeshData worldMeshData;
@@ -263,19 +289,13 @@ void Application::setupScene()
 
     std::cout << "Setting up scene..." << std::endl;
 
-    gameWorld_.addBlock(0, 0, 0);
-
-    gameWorld_.addBlock(1, 0, 0);
-    gameWorld_.addBlock(2, 0, 0);
-    gameWorld_.addBlock(3, 0, 0);
-
-    gameWorld_.addBlock(0, 0, 1);
-    gameWorld_.addBlock(0, 0, 2);
-    gameWorld_.addBlock(0, 0, 3);
-
-    gameWorld_.addBlock(0, 1, 0);
-    gameWorld_.addBlock(0, 2, 0);
-    gameWorld_.addBlock(0, 3, 0);
+    for (int z = 0; z < 16; ++z)
+    {
+        for (int x = 0; x < 16; ++x)
+        {
+            gameWorld_.addBlock(x, 0, z);
+        }
+    }
 
     std::cout
         << "Scene setup complete. "
@@ -348,7 +368,7 @@ void Application::render()
     // Renderer already handles clear, shader use, matrix setup, drawing
     if (renderer_)
     {
-        renderer_->render(gameWorld_, camera_);
+        renderer_->render(gameWorld_, camera_, blockTextureId_);
     }
 }
 
@@ -361,6 +381,7 @@ void Application::shutdown()
     renderer_.reset();
     worldMesh_.reset();
     blockShader_.reset();
+    glDeleteTextures(1, &blockTextureId_);
     window_.reset(); // This triggers Window destructor, cleaning up GLFW
     std::cout << "Application shutdown complete." << std::endl;
 }

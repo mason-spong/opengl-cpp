@@ -16,7 +16,7 @@ private:
 public:
     Renderer(const Mesh &mesh, const Shader &shader);
 
-    void render(const World &world, const Camera &camera);
+    void render(const World &world, const Camera &camera, unsigned int textureId);
 };
 
 #endif
