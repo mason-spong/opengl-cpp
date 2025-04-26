@@ -224,7 +224,7 @@ bool Application::loadResources()
     // Load Texture
 
     int x, y, n;
-    unsigned char *data = stbi_load("assets/textures/stone_16x16.png", &x, &y, &n, 0);
+    unsigned char *data = stbi_load("assets/textures/dirt_16x16.png", &x, &y, &n, 0);
 
     std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
 
