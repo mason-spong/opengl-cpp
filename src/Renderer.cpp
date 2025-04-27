@@ -41,7 +41,7 @@ void Renderer::render(const World &world, const Camera &camera, unsigned int tex
     shaderToUse.setMatrix4("model", model);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, textureId);
 
     shaderToUse.setInt("textureSampler", 0);
 

@@ -11,7 +11,7 @@ namespace MeshBuilder
     // Helper function: Appends the vertices and indices for a single cube
     // centered at 'centerOffset' to the provided MeshData.
     // Assumes standard cube size of 1.0f.
-    void appendCube(MeshData &meshData, const glm::vec3 &centerOffset, float size = 1.0f)
+    void appendCube(MeshData &meshData, const glm::vec3 &centerOffset, std::map<BlockType, FaceToLayer> &layer_mapping, BlockType blockType, float size = 1.0f)
     {
         float halfSize = size / 2.0f;
 
@@ -42,19 +42,24 @@ namespace MeshBuilder
         glm::vec2 uv_tr = {1.0f, 1.0f};
         glm::vec2 uv_tl = {0.0f, 1.0f};
 
+        // Texture layer
+        FaceToLayer block_layer_map = layer_mapping[blockType];
+
         // Temporary storage for this cube's data
         std::vector<glm::vec3> cubeVertices;
         std::vector<glm::vec3> cubeNormals;
         std::vector<glm::vec2> cubeTexCoords;
+        std::vector<float> cubeLayerIndices;
         std::vector<unsigned int> cubeIndices;
 
         // Reserve space for efficiency (24 vertices, 36 indices)
         cubeVertices.reserve(24);
         cubeNormals.reserve(24);
         cubeTexCoords.reserve(24);
+        cubeLayerIndices.reserve(24);
         cubeIndices.reserve(36);
 
-        // Add vertices, normals, UVs for each face (CCW from outside)
+        // Add vertices, normals, UVs, texture layer for each face (CCW from outside)
         // Front (+Z)
         cubeVertices.push_back(p_llr);
         cubeVertices.push_back(p_rlr);
@@ -66,6 +71,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.front));
+        }
         // Back (-Z)
         cubeVertices.push_back(p_rll);
         cubeVertices.push_back(p_lll);
@@ -77,7 +86,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
-        // Right (+X)
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.back));
+        } // Right (+X)
         cubeVertices.push_back(p_rll);
         cubeVertices.push_back(p_rlr);
         cubeVertices.push_back(p_rrr);
@@ -88,7 +100,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
-        // Left (-X)
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.right));
+        } // Left (-X)
         cubeVertices.push_back(p_llr);
         cubeVertices.push_back(p_lll);
         cubeVertices.push_back(p_lrl);
@@ -99,7 +114,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
-        // Top (+Y)
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.left));
+        } // Top (+Y)
         cubeVertices.push_back(p_lrl);
         cubeVertices.push_back(p_rrl);
         cubeVertices.push_back(p_rrr);
@@ -110,6 +128,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.top));
+        }
         // Bottom (-Y)
         cubeVertices.push_back(p_llr);
         cubeVertices.push_back(p_rlr);
@@ -121,7 +143,10 @@ namespace MeshBuilder
         cubeTexCoords.push_back(uv_br);
         cubeTexCoords.push_back(uv_tr);
         cubeTexCoords.push_back(uv_tl);
-
+        for (int i = 0; i < 4; ++i)
+        { // Add index 4 times
+            cubeLayerIndices.push_back(static_cast<float>(block_layer_map.bottom));
+        }
         // Add indices relative to the start of *this cube's* vertices (0-23)
         for (unsigned int i = 0; i < 6; ++i)
         { // For each face (which added 4 vertices)
@@ -136,10 +161,11 @@ namespace MeshBuilder
 
         // --- Append this cube's data to the main MeshData ---
 
-        // Append vertices, normals, texCoords
+        // Append vertices, normals, texCoords, layer indices
         meshData.vertices.insert(meshData.vertices.end(), cubeVertices.begin(), cubeVertices.end());
         meshData.normals.insert(meshData.normals.end(), cubeNormals.begin(), cubeNormals.end());
         meshData.texCoords.insert(meshData.texCoords.end(), cubeTexCoords.begin(), cubeTexCoords.end());
+        meshData.layerIndices.insert(meshData.layerIndices.end(), cubeLayerIndices.begin(), cubeLayerIndices.end());
 
         // Append indices, making sure to offset them by baseVertexIndex
         for (unsigned int index : cubeIndices)
@@ -150,7 +176,7 @@ namespace MeshBuilder
 
     // ---- The Main Function to Generate the World Mesh ----
     // Fulfills the role of the original `generateMesh(const World& world, MeshData& meshData)` signature.
-    void generateWorldMesh(const World &world, MeshData &meshData)
+    void generateWorldMesh(const World &world, MeshData &meshData, std::map<BlockType, FaceToLayer> &layer_mapping)
     {
         // Start with an empty mesh for the entire world
         meshData.clear();
@@ -176,7 +202,7 @@ namespace MeshBuilder
 
                         // Append the full geometry (all 6 faces) for a cube
                         // at this position to the main meshData object.
-                        appendCube(meshData, blockCenter, 1.0f);
+                        appendCube(meshData, blockCenter, layer_mapping, world.getBlockType(x, y, z), 1.0f);
                     }
                 }
             }

@@ -223,34 +223,219 @@ bool Application::loadResources()
 
     // Load Texture
 
+    int dirt = 0;
+    int stone = 1;
+    int sand = 2;
+    int grass_top = 3;
+    int grass_side = 4;
+    int wood_oak_top = 5;
+    int wood_oak_side = 6;
+    int cobblestone = 7;
+    int oak_plank = 8;
+    int oak_leaf = 9;
+
+    layer_mapping.emplace(BlockType::DIRT, FaceToLayer{dirt, dirt, dirt, dirt, dirt, dirt});
+    layer_mapping.emplace(BlockType::STONE, FaceToLayer{stone, stone, stone, stone, stone, stone});
+    layer_mapping.emplace(BlockType::SAND, FaceToLayer{sand, sand, sand, sand, sand, sand});
+    layer_mapping.emplace(BlockType::GRASS, FaceToLayer{grass_side, grass_side, grass_top, dirt, grass_side, grass_side});
+    layer_mapping.emplace(BlockType::WOOD_OAK, FaceToLayer{wood_oak_side, wood_oak_side, wood_oak_top, wood_oak_top, wood_oak_side, wood_oak_side});
+    layer_mapping.emplace(BlockType::COBBLESTONE, FaceToLayer{cobblestone, cobblestone, cobblestone, cobblestone, cobblestone, cobblestone});
+    layer_mapping.emplace(BlockType::OAK_PLANK, FaceToLayer{oak_plank, oak_plank, oak_plank, oak_plank, oak_plank, oak_plank});
+    layer_mapping.emplace(BlockType::OAK_LEAF, FaceToLayer{oak_leaf, oak_leaf, oak_leaf, oak_leaf, oak_leaf, oak_leaf});
+
+    glGenTextures(1, &blockTextureArrayId);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, blockTextureArrayId);
+
+    int textureWidth = 16;  // Example
+    int textureHeight = 16; // Example
+    int layerCount = 10;    // Example: dirt, stone, grass_top, grass_side
+    int mipLevelCount = 4;  // Calculate based on size, e.g., log2(max(width, height)) + 1
+
+    glTexImage3D(GL_TEXTURE_2D_ARRAY,
+                 0,                // Base mipmap level for initial definition
+                 GL_RGB8,          // Internal format (requesting 8 bits per channel RGB)
+                 textureWidth,     // Width
+                 textureHeight,    // Height
+                 layerCount,       // Depth (number of layers)
+                 0,                // Border (must be 0 in core profile)
+                 GL_RGB,           // Format of pixel data (doesn't matter when data is NULL)
+                 GL_UNSIGNED_BYTE, // Type of pixel data (doesn't matter when data is NULL)
+                 NULL);            // Pass NULL data pointer to only allocate storage
+
+    stbi_set_flip_vertically_on_load(true);
+
     int x, y, n;
-    unsigned char *data = stbi_load("assets/textures/grass_top_16x16.png", &x, &y, &n, 0);
-
+    unsigned char *data = stbi_load("assets/textures/dirt_16x16.png", &x, &y, &n, 0);
     std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    dirt,             // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
 
-    glGenTextures(1, &blockTextureId_);
-    glBindTexture(GL_TEXTURE_2D, blockTextureId_);
+    data = stbi_load("assets/textures/stone_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    stone,            // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/sand_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    sand,             // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/grass_top_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    grass_top,        // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/grass_side_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    grass_side,       // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/oak_top_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    wood_oak_top,     // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/oak_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    wood_oak_side,    // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/cobblestone_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    cobblestone,      // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/oak_plank_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    oak_plank,        // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    stbi_image_free(data);
+
+    data = stbi_load("assets/textures/oak_leaf_16x16.png", &x, &y, &n, 0);
+    std::cout << "stb image x: " << x << " y: " << y << " n: " << n << '\n';
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                    0,                // Mipmap level (0 is base)
+                    0, 0,             // xoffset, yoffset (always 0 for full layer update)
+                    oak_leaf,         // The layer index to upload to
+                    textureWidth,     // Width of the data being uploaded
+                    textureHeight,    // Height of the data being uploaded
+                    1,                // Depth (always 1 for 2D array layers)
+                    GL_RGB,           // Format of the source data (e.g., from stb_image)
+                    GL_UNSIGNED_BYTE, // Type of the source data
+                    data);            // Pointer to the image data
+    std::cout << "about to free\n";
+    stbi_image_free(data);
+
+    std::cout << "finished loading images\n";
+
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     // Set wrapping parameters for S (horizontal) and T (vertical) texture coordinates
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Repeat the texture horizontally
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Repeat the texture vertically
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT); // Repeat the texture horizontally
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT); // Repeat the texture vertically
 
     // Set filtering parameters for magnification (zooming in) and minification (zooming out)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Use linear interpolation for magnification
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Use linear interpolation for magnification
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
     // Create Mesh
-
     MeshData worldMeshData;
 
-    MeshBuilder::generateWorldMesh(gameWorld_, worldMeshData);
+    std::cout << "about to generate world mesh\n";
+
+    MeshBuilder::generateWorldMesh(gameWorld_, worldMeshData, layer_mapping);
+
+    // *** ADD THIS CHECK ***
+    std::cout << "MeshData sizes before interleaving:\n";
+    std::cout << "  Vertices:     " << worldMeshData.vertices.size() << "\n";
+    std::cout << "  Normals:      " << worldMeshData.normals.size() << "\n";
+    std::cout << "  TexCoords:    " << worldMeshData.texCoords.size() << "\n";
+    std::cout << "  LayerIndices: " << worldMeshData.layerIndices.size() << "\n";
+    std::cout << "  Indices:      " << worldMeshData.indices.size() << "\n";
+    assert(worldMeshData.vertices.size() == worldMeshData.normals.size());
+    assert(worldMeshData.vertices.size() == worldMeshData.texCoords.size());
+    assert(worldMeshData.vertices.size() == worldMeshData.layerIndices.size());
+    // *** END ADDED CHECK ***
 
     std::vector<float> vertices = worldMeshData.getInterleavedVertices();
 
@@ -296,6 +481,22 @@ void Application::setupScene()
             gameWorld_.addBlock(x, 0, z, BlockType::DIRT);
         }
     }
+
+    gameWorld_.addBlock(3, 1, 3, BlockType::WOOD_OAK);
+    gameWorld_.addBlock(3, 2, 3, BlockType::WOOD_OAK);
+    gameWorld_.addBlock(3, 3, 3, BlockType::WOOD_OAK);
+
+    gameWorld_.addBlock(4, 3, 3, BlockType::OAK_LEAF);
+
+    gameWorld_.addBlock(1, 1, 3, BlockType::SAND);
+
+    gameWorld_.addBlock(3, 1, 1, BlockType::COBBLESTONE);
+
+    gameWorld_.addBlock(5, 1, 5, BlockType::GRASS);
+
+    gameWorld_.addBlock(7, 1, 7, BlockType::OAK_PLANK);
+
+    gameWorld_.addBlock(7, 1, 5, BlockType::STONE);
 
     std::cout
         << "Scene setup complete. "
@@ -368,7 +569,7 @@ void Application::render()
     // Renderer already handles clear, shader use, matrix setup, drawing
     if (renderer_)
     {
-        renderer_->render(gameWorld_, camera_, blockTextureId_);
+        renderer_->render(gameWorld_, camera_, blockTextureArrayId);
     }
 }
 
@@ -381,7 +582,7 @@ void Application::shutdown()
     renderer_.reset();
     worldMesh_.reset();
     blockShader_.reset();
-    glDeleteTextures(1, &blockTextureId_);
+    glDeleteTextures(1, &blockTextureArrayId);
     window_.reset(); // This triggers Window destructor, cleaning up GLFW
     std::cout << "Application shutdown complete." << std::endl;
 }

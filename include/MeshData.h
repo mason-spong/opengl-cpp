@@ -12,12 +12,14 @@ struct MeshData
     std::vector<glm::vec3> vertices;   // Vertex positions (x, y, z)
     std::vector<glm::vec3> normals;    // Surface normals (for lighting)
     std::vector<glm::vec2> texCoords;  // Texture coordinates (u, v)
+    std::vector<float> layerIndices;   // Which texture to grab from texture array
     std::vector<unsigned int> indices; // Indices defining triangles
 
     std::vector<std::tuple<unsigned int, size_t, int>> attributeLayout = {
         {0, 0, 3},                 // Pos: loc 0, offset 0, size 3
         {1, 3 * sizeof(float), 3}, // Normal: loc 1, offset 3*float, size 3
-        {2, 6 * sizeof(float), 2}  // TexCoord: loc 2, offset 6*float, size 2
+        {2, 6 * sizeof(float), 2}, // TexCoord: loc 2, offset 6*float, size 2
+        {3, 8 * sizeof(float), 1}  // Layer index
     };
     // Clears all data vectors
     void
@@ -26,6 +28,7 @@ struct MeshData
         vertices.clear();
         normals.clear();
         texCoords.clear();
+        layerIndices.clear();
         indices.clear();
     }
 
@@ -44,6 +47,8 @@ struct MeshData
 
             interleavedData.emplace_back(texCoords[i].x);
             interleavedData.emplace_back(texCoords[i].y);
+
+            interleavedData.emplace_back(layerIndices[i]);
         }
 
         return interleavedData;
@@ -51,6 +56,6 @@ struct MeshData
 
     size_t getVertexStride()
     {
-        return 8 * sizeof(float);
+        return 9 * sizeof(float);
     }
 };

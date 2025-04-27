@@ -4,6 +4,7 @@
 #include <memory> // For unique_ptr
 #include "World.h"
 #include "Camera.h"
+#include <map>
 // Forward declarations to avoid including heavy headers
 class Window;
 class Shader;
@@ -21,6 +22,16 @@ struct InputState
 
     float mouseDX = 0.0f; // mouse delta x
     float mouseDY = 0.0f; // mouse delta y
+};
+
+struct FaceToLayer
+{
+    int front;
+    int back;
+    int top;
+    int bottom;
+    int left;
+    int right;
 };
 
 class Application
@@ -48,7 +59,8 @@ private:
     World gameWorld_;
     Camera camera_;
 
-    unsigned int blockTextureId_;
+    unsigned int blockTextureArrayId;
+    std::map<BlockType, FaceToLayer> layer_mapping;
 
     InputState input_;
     float cameraSpeed_ = 5.0f; // movement speed

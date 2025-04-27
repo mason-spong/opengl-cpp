@@ -18,6 +18,9 @@ enum class BlockType : uint8_t
     SAND = 3,
     GRASS = 4,
     WOOD_OAK = 5,
+    COBBLESTONE = 6,
+    OAK_PLANK = 7,
+    OAK_LEAF = 8,
 };
 
 class World
@@ -30,7 +33,7 @@ public:
     World();
     void addBlock(int x, int y, int z, BlockType BlockType);
     void removeBlock(int x, int y, int z); // set to AIR
-    BlockType getBlockType(int x, int y, int z);
+    BlockType getBlockType(int x, int y, int z) const;
 
     // --- New Method Declaration ---
     // Check if a block is solid (non-zero) at the specified coordinates

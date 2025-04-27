@@ -37,6 +37,18 @@ void World::removeBlock(int x, int y, int z)
     }
 }
 
+BlockType World::getBlockType(int x, int y, int z) const
+{
+    int index = getIndex(x, y, z);
+    // Consider out-of-bounds as not solid (air)
+    if (index == -1)
+    {
+        return BlockType::AIR;
+    }
+
+    return blocks[index];
+}
+
 // --- New Method Definition ---
 bool World::isSolid(int x, int y, int z) const
 {
