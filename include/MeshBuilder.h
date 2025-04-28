@@ -89,11 +89,12 @@ namespace MeshBuilder
         for (int i = 0; i < 4; ++i)
         { // Add index 4 times
             cubeLayerIndices.push_back(static_cast<float>(block_layer_map.back));
-        } // Right (+X)
-        cubeVertices.push_back(p_rll);
+        }
+        // Right (+X)
         cubeVertices.push_back(p_rlr);
-        cubeVertices.push_back(p_rrr);
+        cubeVertices.push_back(p_rll);
         cubeVertices.push_back(p_rrl);
+        cubeVertices.push_back(p_rrr);
         for (int i = 0; i < 4; ++i)
             cubeNormals.push_back(n_right);
         cubeTexCoords.push_back(uv_bl);
@@ -103,11 +104,12 @@ namespace MeshBuilder
         for (int i = 0; i < 4; ++i)
         { // Add index 4 times
             cubeLayerIndices.push_back(static_cast<float>(block_layer_map.right));
-        } // Left (-X)
-        cubeVertices.push_back(p_llr);
+        }
+        // Left (-X)
         cubeVertices.push_back(p_lll);
-        cubeVertices.push_back(p_lrl);
+        cubeVertices.push_back(p_llr);
         cubeVertices.push_back(p_lrr);
+        cubeVertices.push_back(p_lrl);
         for (int i = 0; i < 4; ++i)
             cubeNormals.push_back(n_left);
         cubeTexCoords.push_back(uv_bl);
@@ -117,11 +119,12 @@ namespace MeshBuilder
         for (int i = 0; i < 4; ++i)
         { // Add index 4 times
             cubeLayerIndices.push_back(static_cast<float>(block_layer_map.left));
-        } // Top (+Y)
-        cubeVertices.push_back(p_lrl);
-        cubeVertices.push_back(p_rrl);
-        cubeVertices.push_back(p_rrr);
+        }
+        // Top (+Y)
         cubeVertices.push_back(p_lrr);
+        cubeVertices.push_back(p_rrr);
+        cubeVertices.push_back(p_rrl);
+        cubeVertices.push_back(p_lrl);
         for (int i = 0; i < 4; ++i)
             cubeNormals.push_back(n_top);
         cubeTexCoords.push_back(uv_bl);
@@ -133,10 +136,10 @@ namespace MeshBuilder
             cubeLayerIndices.push_back(static_cast<float>(block_layer_map.top));
         }
         // Bottom (-Y)
-        cubeVertices.push_back(p_llr);
-        cubeVertices.push_back(p_rlr);
-        cubeVertices.push_back(p_rll);
         cubeVertices.push_back(p_lll);
+        cubeVertices.push_back(p_rll);
+        cubeVertices.push_back(p_rlr);
+        cubeVertices.push_back(p_llr);
         for (int i = 0; i < 4; ++i)
             cubeNormals.push_back(n_bottom);
         cubeTexCoords.push_back(uv_bl);

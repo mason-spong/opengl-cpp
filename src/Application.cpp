@@ -193,13 +193,22 @@ bool Application::initWindow()
 
 bool Application::initOpenGL()
 {
-    // Set global OpenGL state
-    // Ensure this is called *after* the OpenGL context is created and made current (in Window constructor)
-    glEnable(GL_DEPTH_TEST);
+    // Ensure this is called *after* the OpenGL context is created and made current
+
+    // --- Current State ---
+    glEnable(GL_DEPTH_TEST); // Keep depth testing enabled
+
+    // --- ADD THESE LINES ---
+    glEnable(GL_CULL_FACE); // Enable face culling
+    glCullFace(GL_BACK);    // Tell OpenGL to cull back-facing triangles
+    glFrontFace(GL_CCW);    // Define CCW winding order as front-facing (this is the default and matches your MeshBuilder)
+    // ---------------------
+
     // Set clear color (can also be done per-frame in render)
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    std::cout << "OpenGL state initialized (Depth Test enabled)." << std::endl;
-    return true; // Add error checking if needed
+
+    std::cout << "OpenGL state initialized (Depth Test & Back-Face Culling enabled)." << std::endl; // Updated message
+    return true;                                                                                    // Add error checking if needed
 }
 
 bool Application::loadResources()
@@ -252,7 +261,7 @@ bool Application::loadResources()
     int mipLevelCount = 4;  // Calculate based on size, e.g., log2(max(width, height)) + 1
 
     glTexImage3D(GL_TEXTURE_2D_ARRAY,
-                 0,                // Base mipmap level for initial definition
+                 0,                // Base mipmap level for initial definition©
                  GL_RGB8,          // Internal format (requesting 8 bits per channel RGB)
                  textureWidth,     // Width
                  textureHeight,    // Height
