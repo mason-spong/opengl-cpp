@@ -22,6 +22,9 @@ void Renderer::render(const World &world, const Camera &camera, unsigned int tex
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Uncomment to enable wireframe render mode
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     // Use the shader program
     shaderToUse.use();
 
